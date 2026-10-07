@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Drypical — Pedidos y Rutas</title>
+<meta name="theme-color" content="#1b5e20">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{ --verde:#1b5e20; --verde2:#2e7d32; --crema:#fff8e7; --naranja:#ef6c00; --rojo:#c62828; --amarillo:#f9a825; --gris:#5f6368; --borde:#e0ddd2; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:var(--crema); color:#202124; }
+  header{ background:var(--verde); color:#fff; padding:10px 14px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:20; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  header img{ height:44px; width:auto; background:#fff; border-radius:8px; padding:3px; }
+  header .t{ line-height:1.15; }
+  header .t b{ font-size:17px; display:block; }
+  header .t span{ font-size:12px; opacity:.85; }
+  header .modo{ margin-left:auto; font-size:11px; background:rgba(255,255,255,.18); padding:4px 8px; border-radius:20px; white-space:nowrap; }
+  nav{ display:flex; background:#fff; border-bottom:1px solid var(--borde); position:sticky; top:64px; z-index:19; }
+  nav button{ flex:1; border:none; background:none; padding:12px 4px; font-size:14px; font-weight:600; color:var(--gris); border-bottom:3px solid transparent; cursor:pointer; }
+  nav button.act{ color:var(--verde); border-bottom-color:var(--verde); }
+  main{ padding:14px; max-width:860px; margin:0 auto; padding-bottom:90px; }
+  .card{ background:#fff; border:1px solid var(--borde); border-radius:12px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .card h3{ margin:0 0 6px; font-size:16px; }
+  .muted{ color:var(--gris); font-size:13px; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .sp{ flex:1; }
+  .btn{ border:none; border-radius:9px; padding:10px 14px; font-size:14px; font-weight:700; cursor:pointer; background:var(--verde); color:#fff; }
+  .btn.sec{ background:#e8f5e9; color:var(--verde); }
+  .btn.naranja{ background:var(--naranja); }
+  .btn.rojo{ background:#fdecea; color:var(--rojo); }
+  .btn.chico{ padding:6px 10px; font-size:13px; border-radius:7px; }
+  .fab{ position:fixed; right:16px; bottom:20px; z-index:30; background:var(--naranja); color:#fff; border:none; border-radius:30px; padding:14px 20px; font-size:15px; font-weight:800; box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer; }
+  .badge{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; color:#fff; }
+  .b-verde{ background:var(--verde2); } .b-rojo{ background:var(--rojo); } .b-amar{ background:var(--amarillo); color:#4e342e; } .b-gris{ background:#9e9e9e; } .b-nar{ background:var(--naranja); }
+  .alerta{ border-left:5px solid var(--rojo); } .aviso{ border-left:5px solid var(--amarillo); }
+  label{ display:block; font-size:13px; font-weight:600; margin:10px 0 4px; color:#37474a; }
+  input,select,textarea{ width:100%; padding:11px; border:1px solid #cfd8dc; border-radius:9px; font-size:15px; background:#fff; }
+  textarea{ min-height:56px; resize:vertical; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .linea{ border:1px dashed var(--borde); border-radius:10px; padding:10px; margin-top:10px; background:#fffdf5; }
+  .modal{ position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:50; display:none; overflow-y:auto; }
+  .modal.ab{ display:block; }
+  .hoja{ background:#fff; max-width:640px; margin:18px auto; border-radius:14px; padding:18px; }
+  .hoja h2{ margin:0 0 4px; font-size:19px; color:var(--verde); }
+  .tot{ font-size:17px; font-weight:800; color:var(--verde); }
+  a.tel{ color:var(--verde2); font-weight:700; text-decoration:none; }
+  .vacio{ text-align:center; color:var(--gris); padding:26px 10px; font-size:14px; }
+  #login{ position:fixed; inset:0; background:var(--crema); z-index:100; display:none; padding:30px 20px; }
+  #login.ab{ display:block; }
+  .oculto{ display:none !important; }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Drypical">
+  <div class="t"><b>Pedidos y Rutas</b><span>Control interno · Real Fruit • Real Flavor</span></div>
+  <div class="modo" id="modoBadge">Modo local</div>
+</header>
+<nav>
+  <button data-vista="panel" class="act">Panel</button>
+  <button data-vista="tiendas">Tiendas</button>
+  <button data-vista="despachos">Despachos</button>
+  <button data-vista="productos">Productos</button>
+</nav>
+<main>
+  <section id="vista-panel"></section>
+  <section id="vista-tiendas" class="oculto"></section>
+  <section id="vista-despachos" class="oculto"></section>
+  <section id="vista-productos" class="oculto"></section>
+</main>
+<button class="fab" id="fabBtn">+ Nuevo</button>
+
+<div class="modal" id="modal"><div class="hoja" id="hoja"></div></div>
+
+<div id="login">
+  <div style="max-width:380px;margin:40px auto;" class="card">
+    <img src="logo.png" alt="Drypical" style="width:150px;display:block;margin:0 auto 10px;">
+    <h3 style="text-align:center;">Entrar a la app</h3>
+    <label>Correo</label><input id="li-correo" type="email" autocomplete="username">
+    <label>Contraseña</label><input id="li-clave" type="password" autocomplete="current-password">
+    <div style="height:12px"></div>
+    <button class="btn" style="width:100%" onclick="entrar()">Entrar</button>
+    <p class="muted" id="li-error" style="color:var(--rojo)"></p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+window.__crearSupabase = createClient;
+</script>
+<script>
+'use strict';
+/* ========= Drypical · Pedidos y Rutas =========
+   Datos: nube (Supabase) si config.js trae las llaves; si no, modo local en este aparato. */
+const CFG = window.DRYPICAL_CONFIG || {};
+const NUBE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+let sb = null;
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_ORDEN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const PRODUCTOS_BASE = ['Piña 40 g','Piña 200 g','Mango 40 g','Mango 200 g','Fresa 40 g','Fresa 200 g','Naranja 40 g','Naranja 200 g','Manzana 40 g','Manzana 200 g','Banana 40 g','Banana 200 g','Tropical Mix 40 g','Tropical Mix 200 g','Premium Garnish · Naranja 85 g'];
+let DB = { tiendas: [], productos: [], despachos: [] };
+let vista = 'panel';
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const hoyISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const fmtFecha = iso => { if(!iso) return '—'; const [y,m,d] = iso.split('-'); return d + '/' + m + '/' + y; };
+const dinero = n => '$' + (Number(n)||0).toFixed(2);
+const diasHasta = iso => { if(!iso) return null; const a = new Date(hoyISO()+'T00:00:00'), b = new Date(iso+'T00:00:00'); return Math.round((b-a)/86400000); };
+const tiendaPorId = id => DB.tiendas.find(t => t.id === id);
+const totalDespacho = d => (d.lineas||[]).reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
+
+/* ---------- Almacenamiento ---------- */
+function guardarLocal(){ localStorage.setItem('drypical_db_v1', JSON.stringify(DB)); }
+function cargarLocal(){
+  try { const raw = localStorage.getItem('drypical_db_v1'); if(raw){ DB = JSON.parse(raw); return; } } catch(e){}
+  DB = { tiendas: [], productos: PRODUCTOS_BASE.map(n => ({ id: uid()+n.length, nombre: n })), despachos: [] };
+  guardarLocal();
+}
+async function cargarNube(){
+  const [t,p,d] = await Promise.all([ sb.from('tiendas').select('*'), sb.from('productos').select('*'), sb.from('despachos').select('*') ]);
+  if(t.error) throw t.error; if(p.error) throw p.error; if(d.error) throw d.error;
+  DB.tiendas = t.data || []; DB.productos = p.data || []; DB.despachos = d.data || [];
+  if(!DB.productos.length){ for(const n of PRODUCTOS_BASE){ await guardar('productos', { id: uid()+Math.random().toString(36).slice(2,6), nombre: n }); } await cargarNube(); }
+}
+async function guardar(tabla, obj){
+  if(NUBE){ const { error } = await sb.from(tabla).upsert(obj); if(error){ alert('Error al guardar en la nube: ' + error.message); throw error; } }
+  const arr = DB[tabla]; const i = arr.findIndex(x => x.id === obj.id);
+  if(i >= 0) arr[i] = obj; else arr.push(obj);
+  if(!NUBE) guardarLocal();
+}
+async function borrar(tabla, id){
+  if(NUBE){ const { error } = await sb.from(tabla).delete().eq('id', id); if(error){ alert('Error al borrar: ' + error.message); return; } }
+  DB[tabla] = DB[tabla].filter(x => x.id !== id);
+  if(!NUBE) guardarLocal();
+  pintar();
+}
+
+/* ---------- Navegación ---------- */
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => { vista = b.dataset.vista; pintar(); }));
+$('#fabBtn').addEventListener('click', () => {
+  if(vista === 'tiendas') formTienda();
+  else if(vista === 'productos') formProducto();
+  else formDespacho();
+});
+function pintar(){
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('act', b.dataset.vista === vista));
+  ['panel','tiendas','despachos','productos'].forEach(v => $('#vista-'+v).classList.toggle('oculto', v !== vista));
+  $('#fabBtn').textContent = vista === 'tiendas' ? '+ Tienda' : vista === 'productos' ? '+ Producto' : '+ Despacho';
+  if(vista === 'panel') pintarPanel();
+  if(vista === 'tiendas') pintarTiendas();
+  if(vista === 'despachos') pintarDespachos();
+  if(vista === 'productos') pintarProductos();
+}
+
+/* ---------- Panel ---------- */
+function vencimientos(){
+  const out = [];
+  DB.despachos.filter(d => d.estado === 'Entregado').forEach(d => (d.lineas||[]).forEach(l => {
+    const dd = diasHasta(l.caducidad);
+    if(dd !== null && dd <= 30) out.push({ tienda: (tiendaPorId(d.tiendaId)||{}).nombre || 'Tienda borrada', producto: l.nombre, caducidad: l.caducidad, dias: dd, cantidad: l.cantidad });
+  }));
+  return out.sort((a,b) => a.dias - b.dias);
+}
+function pintarPanel(){
+  const hoyDia = DIAS[new Date().getDay()];
+  const visitasHoy = DB.tiendas.filter(t => t.diaVisita === hoyDia);
+  const venc = vencimientos();
+  const mes = hoyISO().slice(0,7);
+  const ventasMes = DB.despachos.filter(d => (d.fecha||'').startsWith(mes) && d.estado !== 'Cancelado').reduce((s,d) => s + totalDespacho(d), 0);
+  let h = '<div class="grid2">'
+    + '<div class="card"><h3>Ventas del mes</h3><div class="tot">' + dinero(ventasMes) + '</div><div class="muted">' + DB.despachos.filter(d => (d.fecha||'').startsWith(mes)).length + ' despachos este mes</div></div>'
+    + '<div class="card"><h3>Tiendas activas</h3><div class="tot">' + DB.tiendas.length + '</div><div class="muted">Visitas hoy (' + hoyDia + '): ' + visitasHoy.length + '</div></div></div>';
+  h += '<div class="card"><h3>📍 Visitas de hoy · ' + hoyDia + '</h3>';
+  h += visitasHoy.length ? visitasHoy.map(t => '<div class="row"><div class="sp"><b>' + esc(t.nombre) + '</b><div class="muted">' + esc(t.ruta||'') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + (t.direccion ? ' · ' + esc(t.direccion) : '') + '</div></div><button class="btn sec chico" onclick="formDespacho(\'' + t.id + '\')">Despachar</button></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">Sin visitas programadas para hoy.</div>';
+  h += '</div>';
+  h += '<div class="card"><h3>⏰ Productos por vencer (30 días)</h3>';
+  h += venc.length ? venc.map(v => '<div class="row"><span class="badge ' + (v.dias < 0 ? 'b-rojo' : v.dias <= 7 ? 'b-rojo' : 'b-amar') + '">' + (v.dias < 0 ? 'VENCIDO' : v.dias + ' días') + '</span><div class="sp"><b>' + esc(v.producto) + '</b> · ' + v.cantidad + ' uds<div class="muted">En: ' + esc(v.tienda) + ' · caduca ' + fmtFecha(v.caducidad) + '</div></div></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">Nada por vencer en los próximos 30 días. 🎉</div>';
+  h += '</div>';
+  h += '<div class="card"><h3>🗓️ Ruta de la semana</h3>';
+  h += DIAS_ORDEN.map(dia => { const ts = DB.tiendas.filter(t => t.diaVisita === dia); return '<div class="row"><b style="min-width:86px">' + dia + '</b><div class="sp muted">' + (ts.length ? ts.map(t => esc(t.nombre)).join(', ') : '—') + '</div></div>'; }).join('');
+  h += '</div>';
+  $('#vista-panel').innerHTML = h;
+}
+
+/* ---------- Tiendas ---------- */
+function pintarTiendas(){
+  const el = $('#vista-tiendas');
+  if(!DB.tiendas.length){ el.innerHTML = '<div class="card vacio">Todavía no hay tiendas.<br>Toca <b>+ Tienda</b> para registrar la primera.</div>'; return; }
+  const orden = t => DIAS_ORDEN.indexOf(t.diaVisita);
+  el.innerHTML = [...DB.tiendas].sort((a,b) => orden(a) - orden(b)).map(t => '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t.nombre) + '</h3>'
+    + '<div class="muted">' + (t.contacto ? '👤 ' + esc(t.contacto) + ' · ' : '') + (t.telefono ? '<a class="tel" href="tel:' + esc(t.telefono) + '">' + esc(t.telefono) + '</a>' : '') + '</div>'
+    + (t.direccion ? '<div class="muted">📍 ' + esc(t.direccion) + (t.ciudad ? ', ' + esc(t.ciudad) : '') + ' · <a class="tel" target="_blank" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((t.direccion||'') + ' ' + (t.ciudad||'')) + '">Mapa</a></div>' : '')
+    + '<div style="margin-top:6px"><span class="badge b-verde">' + esc(t.diaVisita || 'Sin día') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + '</span> ' + (t.ruta ? '<span class="badge b-nar">' + esc(t.ruta) + '</span>' : '') + '</div>'
+    + (t.notas ? '<div class="muted" style="margin-top:6px">' + esc(t.notas) + '</div>' : '')
+    + '</div></div><div class="row" style="margin-top:10px"><button class="btn chico" onclick="formDespacho(\'' + t.id + '\')">+ Despacho</button><button class="btn sec chico" onclick="formTienda(\'' + t.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar esta tienda?\'))borrar(\'tiendas\',\'' + t.id + '\')">Borrar</button></div></div>').join('');
+}
+function formTienda(id){
+  const t = id ? tiendaPorId(id) : { nombre:'', contacto:'', telefono:'', direccion:'', ciudad:'', ruta:'', diaVisita:'Lunes', horaVisita:'', notas:'' };
+  abrirHoja('<h2>' + (id ? 'Editar tienda' : 'Nueva tienda') + '</h2>'
+  + '<label>Nombre de la tienda *</label><input id="f-nombre" value="' + escA(t.nombre) + '">'
+  + '<div class="grid2"><div><label>Persona de contacto</label><input id="f-contacto" value="' + escA(t.contacto) + '"></div><div><label>Teléfono</label><input id="f-telefono" type="tel" value="' + escA(t.telefono) + '"></div></div>'
+  + '<label>Dirección</label><input id="f-direccion" value="' + escA(t.direccion) + '">'
+  + '<div class="grid2"><div><label>Ciudad</label><input id="f-ciudad" value="' + escA(t.ciudad) + '"></div><div><label>Ruta / zona</label><input id="f-ruta" placeholder="Ej. Ruta Princeton" value="' + escA(t.ruta) + '"></div></div>'
+  + '<div class="grid2"><div><label>Día de visita</label><select id="f-dia">' + DIAS_ORDEN.map(d => '<option ' + (t.diaVisita === d ? 'selected' : '') + '>' + d + '</option>').join('') + '</select></div><div><label>Hora de visita</label><input id="f-hora" type="time" value="' + escA(t.horaVisita) + '"></div></div>'
+  + '<label>Notas</label><textarea id="f-notas">' + esc(t.notas) + '</textarea>'
+  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarTienda(\'' + (id||'') + '\')">Guardar tienda</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+}
+async function guardarTienda(id){
+  const nombre = $('#f-nombre').value.trim(); if(!nombre){ alert('El nombre de la tienda es obligatorio.'); return; }
+  await guardar('tiendas', { id: id || uid(), nombre, contacto: $('#f-contacto').value.trim(), telefono: $('#f-telefono').value.trim(), direccion: $('#f-direccion').value.trim(), ciudad: $('#f-ciudad').value.trim(), ruta: $('#f-ruta').value.trim(), diaVisita: $('#f-dia').value, horaVisita: $('#f-hora').value, notas: $('#f-notas').value.trim() });
+  cerrarHoja(); vista = 'tiendas'; pintar();
+}
+
+/* ---------- Productos ---------- */
+function pintarProductos(){
+  const el = $('#vista-productos');
+  el.innerHTML = DB.productos.length ? DB.productos.map(p => '<div class="card"><div class="row"><div class="sp"><b>' + esc(p.nombre) + '</b></div><button class="btn sec chico" onclick="formProducto(\'' + p.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar este producto?\'))borrar(\'productos\',\'' + p.id + '\')">Borrar</button></div></div>').join('') : '<div class="card vacio">Sin productos todavía.</div>';
+}
+function formProducto(id){
+  const p = id ? DB.productos.find(x => x.id === id) : { nombre:'' };
+  abrirHoja('<h2>' + (id ? 'Editar producto' : 'Nuevo producto') + '</h2><label>Nombre (sabor y presentación)</label><input id="f-pnombre" placeholder="Ej. Piña 40 g" value="' + escA(p.nombre) + '"><div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarProducto(\'' + (id||'') + '\')">Guardar</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+}
+async function guardarProducto(id){
+  const nombre = $('#f-pnombre').value.trim(); if(!nombre){ alert('Escribe el nombre del producto.'); return; }
+  await guardar('productos', { id: id || uid(), nombre });
+  cerrarHoja(); vista = 'productos'; pintar();
+}
+
+/* ---------- Despachos ---------- */
+let lineasTemp = [];
+function pintarDespachos(){
+  const el = $('#vista-despachos');
+  if(!DB.despachos.length){ el.innerHTML = '<div class="card vacio">Todavía no hay despachos registrados.<br>Toca <b>+ Despacho</b> para crear el primero.</div>'; return; }
+  el.innerHTML = [...DB.despachos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).map(d => {
+    const t = tiendaPorId(d.tiendaId);
+    const badge = d.estado === 'Entregado' ? 'b-verde' : d.estado === 'Cancelado' ? 'b-rojo' : 'b-amar';
+    return '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t ? t.nombre : 'Tienda borrada') + '</h3><div class="muted">' + fmtFecha(d.fecha) + (d.hora ? ' · ' + esc(d.hora) : '') + (d.repartidor ? ' · 🚚 ' + esc(d.repartidor) : '') + '</div></div><span class="badge ' + badge + '">' + esc(d.estado) + '</span></div>'
+    + '<div style="margin-top:6px">' + (d.lineas||[]).map(l => '<div class="muted">• ' + esc(l.nombre) + ' × ' + l.cantidad + (l.caducidad ? ' · caduca ' + fmtFecha(l.caducidad) : '') + (Number(l.precio) ? ' · ' + dinero(l.precio) + ' c/u' : '') + '</div>').join('') + '</div>'
+    + (totalDespacho(d) ? '<div class="tot" style="margin-top:6px">Total: ' + dinero(totalDespacho(d)) + '</div>' : '')
+    + (d.notas ? '<div class="muted" style="margin-top:4px">' + esc(d.notas) + '</div>' : '')
+    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="formDespacho(null,\'' + d.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar este despacho?\'))borrar(\'despachos\',\'' + d.id + '\')">Borrar</button></div></div>';
+  }).join('');
+}
+function formDespacho(tiendaId, despachoId){
+  const d = despachoId ? DB.despachos.find(x => x.id === despachoId) : null;
+  lineasTemp = d ? JSON.parse(JSON.stringify(d.lineas || [])) : [];
+  if(!lineasTemp.length) lineasTemp = [ { nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0, caducidad: '' } ];
+  abrirHoja('<h2>' + (d ? 'Editar despacho' : 'Nuevo despacho') + '</h2>'
+  + '<label>Tienda *</label><select id="f-tienda">' + DB.tiendas.map(t => '<option value="' + t.id + '" ' + ((d ? d.tiendaId : tiendaId) === t.id ? 'selected' : '') + '>' + esc(t.nombre) + '</option>').join('') + '</select>'
+  + (DB.tiendas.length ? '' : '<p class="muted" style="color:var(--rojo)">Primero registra una tienda en la pestaña Tiendas.</p>')
+  + '<div class="grid2"><div><label>Fecha</label><input id="f-fecha" type="date" value="' + (d ? d.fecha : hoyISO()) + '"></div><div><label>Hora</label><input id="f-hora2" type="time" value="' + (d ? d.hora || '' : '') + '"></div></div>'
+  + '<div class="grid2"><div><label>Repartidor / empleado</label><input id="f-repartidor" value="' + escA(d ? d.repartidor : '') + '"></div><div><label>Estado</label><select id="f-estado">' + ['Pendiente','Entregado','Cancelado'].map(e => '<option ' + ((d ? d.estado : 'Pendiente') === e ? 'selected' : '') + '>' + e + '</option>').join('') + '</select></div></div>'
+  + '<label>Productos despachados</label><div id="f-lineas"></div>'
+  + '<button class="btn sec chico" style="margin-top:10px" onclick="agregarLinea()">+ Agregar producto</button>'
+  + '<div class="row" style="margin-top:12px"><span class="sp muted">Total del despacho</span><span class="tot" id="f-total">$0.00</span></div>'
+  + '<label>Notas</label><textarea id="f-notas2">' + esc(d ? d.notas : '') + '</textarea>'
+  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarDespacho(\'' + (despachoId||'') + '\')">Guardar despacho</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+  pintarLineas();
+}
+function pintarLineas(){
+  const cont = $('#f-lineas'); if(!cont) return;
+  cont.innerHTML = lineasTemp.map((l,i) => '<div class="linea"><label>Producto</label><select onchange="lineaCambio(' + i + ',\'nombre\',this.value)">' + DB.productos.map(p => '<option ' + (l.nombre === p.nombre ? 'selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>'
+  + '<div class="grid2"><div><label>Cantidad</label><input type="number" min="0" value="' + l.cantidad + '" oninput="lineaCambio(' + i + ',\'cantidad\',this.value)"></div><div><label>Precio c/u ($)</label><input type="number" min="0" step="0.01" value="' + l.precio + '" oninput="lineaCambio(' + i + ',\'precio\',this.value)"></div></div>'
+  + '<label>Fecha de caducidad</label><input type="date" value="' + (l.caducidad||'') + '" onchange="lineaCambio(' + i + ',\'caducidad\',this.value)">'
+  + '<button class="btn rojo chico" style="margin-top:8px" onclick="quitarLinea(' + i + ')">Quitar producto</button></div>').join('');
+  const tot = lineasTemp.reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
+  const el = $('#f-total'); if(el) el.textContent = dinero(tot);
+}
+function lineaCambio(i, campo, valor){ lineasTemp[i][campo] = (campo === 'cantidad' || campo === 'precio') ? Number(valor) : valor; pintarLineasRefrescaTotal(); }
+function pintarLineasRefrescaTotal(){ const tot = lineasTemp.reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0); const el = $('#f-total'); if(el) el.textContent = dinero(tot); }
+function agregarLinea(){ lineasTemp.push({ nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0, caducidad: '' }); pintarLineas(); }
+function quitarLinea(i){ lineasTemp.splice(i,1); if(!lineasTemp.length) agregarLinea(); else pintarLineas(); }
+async function guardarDespacho(id){
+  const tiendaId = $('#f-tienda').value; if(!tiendaId){ alert('Registra primero una tienda.'); return; }
+  await guardar('despachos', { id: id || uid(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
+  cerrarHoja(); vista = 'despachos'; pintar();
+}
+
+/* ---------- Utilidades UI ---------- */
+function abrirHoja(html){ $('#hoja').innerHTML = html; $('#modal').classList.add('ab'); window.scrollTo(0,0); }
+function cerrarHoja(){ $('#modal').classList.remove('ab'); }
+$('#modal').addEventListener('click', e => { if(e.target.id === 'modal') cerrarHoja(); });
+function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
+
+/* ---------- Arranque ---------- */
+async function iniciar(){
+  $('#modoBadge').textContent = NUBE ? '☁️ Nube' : 'Modo local';
+  if(NUBE){
+    let espera = 0;
+    while(!window.__crearSupabase && espera < 6000){ await new Promise(r => setTimeout(r, 150)); espera += 150; }
+    sb = window.__crearSupabase(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    const { data } = await sb.auth.getSession();
+    if(!data.session){ $('#login').classList.add('ab'); return; }
+    await cargarNube();
+  } else {
+    cargarLocal();
+  }
+  pintar();
+}
+async function entrar(){
+  const correo = $('#li-correo').value.trim(), clave = $('#li-clave').value;
+  const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
+  if(error){ $('#li-error').textContent = 'No se pudo entrar: ' + error.message; return; }
+  $('#login').classList.remove('ab');
+  await cargarNube(); pintar();
+}
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
+iniciar();
+</script>
+</body>
+</html>
