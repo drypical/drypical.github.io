@@ -48,6 +48,19 @@
   .tot{ font-size:17px; font-weight:800; color:var(--verde); }
   a.tel{ color:var(--verde2); font-weight:700; text-decoration:none; }
   .vacio{ text-align:center; color:var(--gris); padding:26px 10px; font-size:14px; }
+  .prod-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+  .prod-card{ background:#fff; border:1px solid var(--borde); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .prod-card img.foto{ width:100%; height:210px; object-fit:cover; object-position:center 30%; display:block; background:#f3efe2; }
+  .prod-card .sinfoto{ height:210px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:#f3efe2; color:var(--gris); font-size:13px; padding:12px; text-align:center; }
+  .prod-card .cuerpo{ padding:12px 14px 14px; }
+  .prod-card h3{ margin:0 0 8px; font-size:16px; }
+  .pres{ display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px dashed var(--borde); }
+  .pres:first-of-type{ border-top:none; }
+  .paso{ display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .paso button{ width:34px; height:34px; border-radius:50%; border:1px solid var(--borde); background:#e8f5e9; color:var(--verde); font-size:19px; font-weight:800; cursor:pointer; line-height:1; }
+  .paso button:active{ background:var(--verde); color:#fff; }
+  .paso .n{ min-width:30px; text-align:center; font-weight:800; font-size:16px; }
+  .mini{ background:none; border:none; color:var(--gris); font-size:12px; cursor:pointer; padding:2px 4px; text-decoration:underline; }
   #login{ position:fixed; inset:0; background:var(--crema); z-index:100; display:none; padding:30px 20px; }
   #login.ab{ display:block; }
   .oculto{ display:none !important; }
@@ -216,13 +229,57 @@ async function guardarTienda(id){
 }
 
 /* ---------- Productos ---------- */
+/* Fotos verificadas limpias una por una (logo completo integrado en la
+   bolsa, texto nítido, sin logo montado): piña rehecha 6-oct y las de
+   imagine_media revisadas el 8-oct. La de mango trae el logo completo
+   pero sin el título del sabor; la tarjeta de la app lo rotula. */
+const FOTOS_SABOR = [
+  { clave: 'Piña', foto: 'img/pouch-pina.webp' },
+  { clave: 'Mango', foto: 'img/pouch-mango.webp' },
+  { clave: 'Fresa', foto: 'img/pouch-fresa.webp' },
+  { clave: 'Naranja', foto: 'img/pouch-naranja.webp' },
+  { clave: 'Manzana', foto: 'img/pouch-apple.webp' },
+  { clave: 'Banana', foto: 'img/pouch-banana.webp' },
+  { clave: 'Tropical Mix', foto: 'img/pouch-tropical.webp' },
+  { clave: 'Premium Garnish', foto: 'img/pouch-garnish.webp' }
+];
+const ORDEN_SABORES = ['Piña','Mango','Fresa','Naranja','Manzana','Banana','Tropical Mix','Premium Garnish'];
+function saborDe(nombre){ for(const s of ORDEN_SABORES){ if(nombre.indexOf(s) === 0) return s; } return nombre.replace(/ \d+ g.*$/, '').replace(/ · .*$/, ''); }
+function fotoDe(sabor){ const f = FOTOS_SABOR.find(x => x.clave === sabor); return f ? f.foto : null; }
+/* Cantidades clicables: selección local en este aparato (no toca la nube). */
+let SELECCION = {};
+try { SELECCION = JSON.parse(localStorage.getItem('drypical_seleccion_v1') || '{}'); } catch(e){ SELECCION = {}; }
+function selGuardar(){ localStorage.setItem('drypical_seleccion_v1', JSON.stringify(SELECCION)); }
+function selCambiar(nombre, delta){
+  SELECCION[nombre] = Math.max(0, (SELECCION[nombre] || 0) + delta);
+  if(!SELECCION[nombre]) delete SELECCION[nombre];
+  selGuardar(); pintarProductos();
+}
+function selLimpiar(){ SELECCION = {}; selGuardar(); pintarProductos(); }
 function pintarProductos(){
   const el = $('#vista-productos');
-  el.innerHTML = DB.productos.length ? DB.productos.map(p => '<div class="card"><div class="row"><div class="sp"><b>' + esc(p.nombre) + '</b></div><button class="btn sec chico" onclick="formProducto(\'' + p.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar este producto?\'))borrar(\'productos\',\'' + p.id + '\')">Borrar</button></div></div>').join('') : '<div class="card vacio">Sin productos todavía.</div>';
+  if(!DB.productos.length){ el.innerHTML = '<div class="card vacio">Sin productos todavía.</div>'; return; }
+  const grupos = {};
+  DB.productos.forEach(p => { const s = saborDe(p.nombre); (grupos[s] = grupos[s] || []).push(p); });
+  const sabores = Object.keys(grupos).sort((a,b) => { const ia = ORDEN_SABORES.indexOf(a), ib = ORDEN_SABORES.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+  const totalSel = Object.values(SELECCION).reduce((s,n) => s + n, 0);
+  let h = '<div class="card"><div class="row"><div class="sp"><h3>🧮 Selección rápida</h3><div class="muted">Toca + en cada presentación y la cantidad se va sumando aquí. Sirve para contar un despacho antes de registrarlo.</div></div></div>'
+    + '<div class="row" style="margin-top:8px"><span class="tot">' + totalSel + ' unidades</span>' + (totalSel ? '<button class="btn sec chico" onclick="selLimpiar()">Limpiar</button>' : '') + '</div>'
+    + (totalSel ? '<div class="muted" style="margin-top:6px">' + Object.keys(SELECCION).map(n => esc(n) + ' × ' + SELECCION[n]).join(' · ') + '</div>' : '')
+    + '</div>';
+  h += '<div class="prod-grid">' + sabores.map(s => {
+    const foto = fotoDe(s);
+    const pres = grupos[s].map(p => '<div class="pres"><span><b>' + esc(p.nombre.replace(s, '').replace(/^\s*·\s*/, '').trim() || p.nombre) + '</b></span>'
+      + '<span class="paso"><button onclick="selCambiar(\'' + escA(p.nombre) + '\',-1)" aria-label="Quitar uno">−</button><span class="n">' + (SELECCION[p.nombre] || 0) + '</span><button onclick="selCambiar(\'' + escA(p.nombre) + '\',1)" aria-label="Agregar uno">+</button></span>'
+      + '<button class="mini" onclick="formProducto(\'' + p.id + '\')">editar</button></div>').join('');
+    return '<div class="prod-card">' + (foto ? '<img class="foto" src="' + foto + '" alt="Bolsa Drypical ' + escA(s) + '">' : '<div class="sinfoto"><span style="font-size:30px">🍓</span>Foto de la bolsa por rehacer<div>(la actual trae el texto borroso)</div></div>')
+      + '<div class="cuerpo"><h3>' + esc(s) + '</h3>' + pres + '</div></div>';
+  }).join('') + '</div>';
+  el.innerHTML = h;
 }
 function formProducto(id){
   const p = id ? DB.productos.find(x => x.id === id) : { nombre:'' };
-  abrirHoja('<h2>' + (id ? 'Editar producto' : 'Nuevo producto') + '</h2><label>Nombre (sabor y presentación)</label><input id="f-pnombre" placeholder="Ej. Piña 40 g" value="' + escA(p.nombre) + '"><div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarProducto(\'' + (id||'') + '\')">Guardar</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+  abrirHoja('<h2>' + (id ? 'Editar producto' : 'Nuevo producto') + '</h2><label>Nombre (sabor y presentación)</label><input id="f-pnombre" placeholder="Ej. Piña 40 g" value="' + escA(p.nombre) + '"><div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarProducto(\'' + (id||'') + '\')">Guardar</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button>' + (id ? '<button class="btn rojo" onclick="if(confirm(\'¿Borrar este producto?\')){ cerrarHoja(); borrar(\'productos\',\'' + id + '\'); }">Borrar</button>' : '') + '</div>');
 }
 async function guardarProducto(id){
   const nombre = $('#f-pnombre').value.trim(); if(!nombre){ alert('Escribe el nombre del producto.'); return; }
