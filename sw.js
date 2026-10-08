@@ -1,6 +1,6 @@
 // Service worker: guarda la estructura de la app para que abra sin conexión.
 // Los datos siempre se leen en vivo (nube) o del almacenamiento local del aparato.
-const CACHE = 'drypical-pedidos-v6';
+const CACHE = 'drypical-pedidos-v7';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './logo.png', './icon-192.png', './icon-512.png', './img/pouch-pina.webp', './img/pouch-mango.webp', './img/pouch-fresa.webp', './img/pouch-naranja.webp', './img/pouch-apple.webp', './img/pouch-banana.webp', './img/pouch-tropical.webp', './img/pouch-garnish.webp'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

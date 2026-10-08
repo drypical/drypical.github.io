@@ -417,8 +417,7 @@ function agregarLinea(){ lineasTemp.push({ nombre: DB.productos[0] ? DB.producto
 function quitarLinea(i){ lineasTemp.splice(i,1); if(!lineasTemp.length) agregarLinea(); else pintarLineas(); }
 async function guardarDespacho(id){
   const tiendaId = $('#f-tienda').value; if(!tiendaId){ alert(tr('alertPrimeroTienda')); return; }
-  const previo = id ? DB.despachos.find(x => x.id === id) : null;
-  await guardar('despachos', { id: id || uid(), folio: previo ? (previo.folio || folioDe(previo)) : siguienteFolio(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
+  await guardar('despachos', { id: id || uid(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
   cerrarHoja(); vista = 'despachos'; pintar();
 }
 
