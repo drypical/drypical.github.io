@@ -18,6 +18,7 @@
   header .t b{ font-size:17px; display:block; }
   header .t span{ font-size:12px; opacity:.85; }
   header .modo{ margin-left:auto; font-size:11px; background:rgba(255,255,255,.18); padding:4px 8px; border-radius:20px; white-space:nowrap; }
+  .hbtn{ background:rgba(255,255,255,.18); color:#fff; border:none; border-radius:20px; padding:5px 11px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
   nav{ display:flex; background:#fff; border-bottom:1px solid var(--borde); position:sticky; top:64px; z-index:19; }
   nav button{ flex:1; border:none; background:none; padding:12px 4px; font-size:14px; font-weight:600; color:var(--gris); border-bottom:3px solid transparent; cursor:pointer; }
   nav button.act{ color:var(--verde); border-bottom-color:var(--verde); }
@@ -64,13 +65,24 @@
   #login{ position:fixed; inset:0; background:var(--crema); z-index:100; display:none; padding:30px 20px; }
   #login.ab{ display:block; }
   .oculto{ display:none !important; }
+  .hoja-pedido table{ width:100%; border-collapse:collapse; margin-top:12px; }
+  .hoja-pedido th,.hoja-pedido td{ border:1px solid #cfd8dc; padding:7px 8px; font-size:13px; text-align:left; }
+  .hoja-pedido th{ background:#e8f5e9; }
+  .firmas{ display:flex; gap:30px; }
+  .firma{ flex:1; text-align:center; }
+  .firma .linea-f{ border-top:1.5px solid #37474a; margin-top:54px; padding-top:5px; font-size:12px; color:#37474a; }
+  .firma .nombre-f{ font-weight:700; font-size:13px; margin-top:2px; min-height:16px; }
+  #imprimible{ display:none; }
+  @media print{ body>*:not(#imprimible){ display:none !important; } #imprimible{ display:block !important; } }
 </style>
 </head>
 <body>
 <header>
   <img src="logo.png" alt="Drypical">
-  <div class="t"><b>Pedidos y Rutas</b><span>Control interno · Real Fruit • Real Flavor</span></div>
+  <div class="t"><b id="appTitulo">Pedidos y Rutas</b><span>Control interno · Real Fruit • Real Flavor</span></div>
   <div class="modo" id="modoBadge">Modo local</div>
+  <button class="hbtn" id="langBtn" onclick="cambiarIdioma()">🌐 EN</button>
+  <button class="hbtn" id="salirBtn" onclick="salir()" style="display:none">Salir</button>
 </header>
 <nav>
   <button data-vista="panel" class="act">Panel</button>
@@ -87,15 +99,17 @@
 <button class="fab" id="fabBtn">+ Nuevo</button>
 
 <div class="modal" id="modal"><div class="hoja" id="hoja"></div></div>
+<div id="imprimible"></div>
 
 <div id="login">
   <div style="max-width:380px;margin:40px auto;" class="card">
     <img src="logo.png" alt="Drypical" style="width:150px;display:block;margin:0 auto 10px;">
-    <h3 style="text-align:center;">Entrar a la app</h3>
-    <label>Correo</label><input id="li-correo" type="email" autocomplete="username">
-    <label>Contraseña</label><input id="li-clave" type="password" autocomplete="current-password">
+    <div style="text-align:right"><button class="btn sec chico" id="langBtnLogin" onclick="cambiarIdioma()">🌐 EN</button></div>
+    <h3 style="text-align:center;" id="li-titulo">Entrar a la app</h3>
+    <label id="li-lbl-correo">Correo</label><input id="li-correo" type="email" autocomplete="username">
+    <label id="li-lbl-clave">Contraseña</label><input id="li-clave" type="password" autocomplete="current-password">
     <div style="height:12px"></div>
-    <button class="btn" style="width:100%" onclick="entrar()">Entrar</button>
+    <button class="btn" style="width:100%" id="li-btn" onclick="entrar()">Entrar</button>
     <p class="muted" id="li-error" style="color:var(--rojo)"></p>
   </div>
 </div>
@@ -126,6 +140,77 @@ const diasHasta = iso => { if(!iso) return null; const a = new Date(hoyISO()+'T0
 const tiendaPorId = id => DB.tiendas.find(t => t.id === id);
 const totalDespacho = d => (d.lineas||[]).reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
 
+
+/* ---------- Idioma / Language ---------- */
+const TXT = {
+es:{appTitulo:'Pedidos y Rutas',salir:'Salir',modoNube:'☁️ Nube',modoLocal:'Modo local',nav_panel:'Panel',nav_tiendas:'Tiendas',nav_despachos:'Despachos',nav_productos:'Productos',fab_tienda:'+ Tienda',fab_producto:'+ Producto',fab_despacho:'+ Despacho',login_titulo:'Entrar a la app',correo:'Correo',clave:'Contraseña',entrar:'Entrar',loginError:'No se pudo entrar: ',ventasMes:'Ventas del mes',despachosEsteMes:'despachos este mes',tiendasActivas:'Tiendas activas',visitasHoyLbl:'Visitas hoy',visitasDeHoy:'📍 Visitas de hoy · ',sinVisitas:'Sin visitas programadas para hoy.',despachar:'Despachar',porVencer:'⏰ Productos por vencer (30 días)',vencido:'VENCIDO',dias:'días',enLbl:'En: ',caducaLbl:'caduca ',uds:'uds',nadaPorVencer:'Nada por vencer en los próximos 30 días. 🎉',rutaSemana:'🗓️ Ruta de la semana',sinTiendas:'Todavía no hay tiendas.<br>Toca <b>+ Tienda</b> para registrar la primera.',mapa:'Mapa',sinDia:'Sin día',btnDespacho:'+ Despacho',editar:'Editar',borrar:'Borrar',confirmBorrarTienda:'¿Borrar esta tienda?',nuevaTienda:'Nueva tienda',editarTienda:'Editar tienda',fNombreTienda:'Nombre de la tienda *',fContacto:'Persona de contacto',fTelefono:'Teléfono',fDireccion:'Dirección',fCiudad:'Ciudad',fRuta:'Ruta / zona',fRutaEj:'Ej. Ruta Princeton',fDiaVisita:'Día de visita',fHoraVisita:'Hora de visita',fNotas:'Notas',guardarTienda:'Guardar tienda',cancelar:'Cancelar',alertNombreTienda:'El nombre de la tienda es obligatorio.',sinProductos:'Sin productos todavía.',selRapida:'🧮 Selección rápida',selRapidaDesc:'Toca + en cada presentación y la cantidad se va sumando aquí. Sirve para contar un despacho antes de registrarlo.',unidades:'unidades',limpiar:'Limpiar',editarMin:'editar',sinFotoTitulo:'Foto de la bolsa pendiente',sinFotoSub:'(sin foto asignada)',editarProducto:'Editar producto',nuevoProducto:'Nuevo producto',fNombreProd:'Nombre (sabor y presentación)',fNombreProdEj:'Ej. Piña 40 g',guardar:'Guardar',confirmBorrarProd:'¿Borrar este producto?',alertNombreProd:'Escribe el nombre del producto.',sinDespachos:'Todavía no hay despachos registrados.<br>Toca <b>+ Despacho</b> para crear el primero.',caducaLinea:' · caduca ',cU:' c/u',totalLbl:'Total: ',tiendaBorrada:'Tienda borrada',nuevoDespacho:'Nuevo despacho',editarDespacho:'Editar despacho',fTienda:'Tienda *',primeroTienda:'Primero registra una tienda en la pestaña Tiendas.',fFecha:'Fecha',fHora:'Hora',fRepartidor:'Repartidor / empleado',fEstado:'Estado',fProdsDesp:'Productos despachados',agregarProducto:'+ Agregar producto',totalDespachoLbl:'Total del despacho',guardarDespacho:'Guardar despacho',alertPrimeroTienda:'Registra primero una tienda.',confirmBorrarDesp:'¿Borrar este despacho?',fProducto:'Producto',fCantidad:'Cantidad',fPrecio:'Precio c/u ($)',fCaducidad:'Fecha de caducidad',quitarProducto:'Quitar producto',est_Pendiente:'Pendiente',est_Entregado:'Entregado',est_Cancelado:'Cancelado','dia_Domingo':'Domingo','dia_Lunes':'Lunes','dia_Martes':'Martes','dia_Miércoles':'Miércoles','dia_Jueves':'Jueves','dia_Viernes':'Viernes','dia_Sábado':'Sábado',enviarPedido:'📧 Enviar pedido',enviar:'📧 Enviar',pedirTiendaPrompt:'¿Para qué tienda es el pedido? (puedes dejarlo vacío)',asuntoPedido:'Pedido Drypical',asuntoDespacho:'Despacho Drypical',lblTienda:'Tienda',lblFecha:'Fecha',lblEstado:'Estado',lblNotas:'Notas',generadoApp:'Generado desde la app Drypical — Pedidos y Rutas.',errGuardar:'Error al guardar en la nube: ',errBorrar:'Error al borrar: ',bolsaAlt:'Bolsa Drypical ',hojaBtn:'🧾 Hoja de pedido',hojaTitulo:'HOJA DE PEDIDO',ordenNo:'N.º de orden',entregadoPor:'Entregado por (vendedor)',firmaVendedor:'Firma y nombre del vendedor',firmaGerente:'Firma y nombre del gerente de tienda',imprimir:'🖨️ Imprimir / Guardar PDF',cerrar:'Cerrar',subtotal:'Subtotal',gracias:'¡Gracias por su compra!'},
+en:{appTitulo:'Orders & Routes',salir:'Log out',modoNube:'☁️ Cloud',modoLocal:'Local mode',nav_panel:'Dashboard',nav_tiendas:'Stores',nav_despachos:'Dispatches',nav_productos:'Products',fab_tienda:'+ Store',fab_producto:'+ Product',fab_despacho:'+ Dispatch',login_titulo:'Sign in to the app',correo:'Email',clave:'Password',entrar:'Sign in',loginError:'Could not sign in: ',ventasMes:'Sales this month',despachosEsteMes:'dispatches this month',tiendasActivas:'Active stores',visitasHoyLbl:'Visits today',visitasDeHoy:"📍 Today's visits · ",sinVisitas:'No visits scheduled for today.',despachar:'Dispatch',porVencer:'⏰ Expiring soon (30 days)',vencido:'EXPIRED',dias:'days',enLbl:'At: ',caducaLbl:'expires ',uds:'units',nadaPorVencer:'Nothing expiring in the next 30 days. 🎉',rutaSemana:"🗓️ This week's route",sinTiendas:'No stores yet.<br>Tap <b>+ Store</b> to register the first one.',mapa:'Map',sinDia:'No day set',btnDespacho:'+ Dispatch',editar:'Edit',borrar:'Delete',confirmBorrarTienda:'Delete this store?',nuevaTienda:'New store',editarTienda:'Edit store',fNombreTienda:'Store name *',fContacto:'Contact person',fTelefono:'Phone',fDireccion:'Address',fCiudad:'City',fRuta:'Route / area',fRutaEj:'E.g. Princeton Route',fDiaVisita:'Visit day',fHoraVisita:'Visit time',fNotas:'Notes',guardarTienda:'Save store',cancelar:'Cancel',alertNombreTienda:'The store name is required.',sinProductos:'No products yet.',selRapida:'🧮 Quick selection',selRapidaDesc:'Tap + on each size and the count adds up here. Use it to count a dispatch before registering it.',unidades:'units',limpiar:'Clear',editarMin:'edit',sinFotoTitulo:'Pouch photo pending',sinFotoSub:'(no photo assigned)',editarProducto:'Edit product',nuevoProducto:'New product',fNombreProd:'Name (flavor & size)',fNombreProdEj:'E.g. Pineapple 40 g',guardar:'Save',confirmBorrarProd:'Delete this product?',alertNombreProd:'Enter the product name.',sinDespachos:'No dispatches recorded yet.<br>Tap <b>+ Dispatch</b> to create the first one.',caducaLinea:' · expires ',cU:' each',totalLbl:'Total: ',tiendaBorrada:'Deleted store',nuevoDespacho:'New dispatch',editarDespacho:'Edit dispatch',fTienda:'Store *',primeroTienda:'First register a store in the Stores tab.',fFecha:'Date',fHora:'Time',fRepartidor:'Driver / employee',fEstado:'Status',fProdsDesp:'Dispatched products',agregarProducto:'+ Add product',totalDespachoLbl:'Dispatch total',guardarDespacho:'Save dispatch',alertPrimeroTienda:'Register a store first.',confirmBorrarDesp:'Delete this dispatch?',fProducto:'Product',fCantidad:'Quantity',fPrecio:'Price each ($)',fCaducidad:'Expiry date',quitarProducto:'Remove product',est_Pendiente:'Pending',est_Entregado:'Delivered',est_Cancelado:'Cancelled','dia_Domingo':'Sunday','dia_Lunes':'Monday','dia_Martes':'Tuesday','dia_Miércoles':'Wednesday','dia_Jueves':'Thursday','dia_Viernes':'Friday','dia_Sábado':'Saturday',enviarPedido:'📧 Email order',enviar:'📧 Email',pedirTiendaPrompt:'Which store is this order for? (you can leave it empty)',asuntoPedido:'Drypical order',asuntoDespacho:'Drypical dispatch',lblTienda:'Store',lblFecha:'Date',lblEstado:'Status',lblNotas:'Notes',generadoApp:'Generated from the Drypical app — Orders & Routes.',errGuardar:'Cloud save error: ',errBorrar:'Delete error: ',bolsaAlt:'Drypical pouch ',hojaBtn:'🧾 Order sheet',hojaTitulo:'ORDER SHEET',ordenNo:'Order No.',entregadoPor:'Delivered by (salesperson)',firmaVendedor:'Salesperson signature & name',firmaGerente:'Store manager signature & name',imprimir:'🖨️ Print / Save PDF',cerrar:'Close',subtotal:'Subtotal',gracias:'Thank you for your order!'}
+};
+let LANG = 'es';
+try { LANG = localStorage.getItem('drypical_idioma_v1') || 'es'; } catch(e){}
+if(LANG !== 'en') LANG = 'es';
+function tr(k){ return (TXT[LANG] && TXT[LANG][k]) || TXT.es[k] || k; }
+function diaTxt(d){ return d ? tr('dia_' + d) : d; }
+function estadoTxt(e){ return tr('est_' + e); }
+const SABOR_EN = { 'Piña': 'Pineapple', 'Fresa': 'Strawberry', 'Naranja': 'Orange', 'Manzana': 'Apple' };
+function saborTxt(s){ return LANG === 'en' ? (SABOR_EN[s] || s) : s; }
+function nombreTxt(n){ if(LANG !== 'en') return n; const s = saborDe(n); return SABOR_EN[s] ? n.replace(s, SABOR_EN[s]) : n; }
+function pintarModo(){ const b = $('#modoBadge'); if(b) b.textContent = NUBE ? tr('modoNube') : tr('modoLocal'); }
+function cambiarIdioma(){
+  LANG = LANG === 'es' ? 'en' : 'es';
+  try { localStorage.setItem('drypical_idioma_v1', LANG); } catch(e){}
+  aplicarIdioma();
+}
+function aplicarIdioma(){
+  document.documentElement.lang = LANG;
+  const at = $('#appTitulo'); if(at) at.textContent = tr('appTitulo');
+  document.querySelectorAll('nav button').forEach(b => { b.textContent = tr('nav_' + b.dataset.vista); });
+  const lb = $('#langBtn'); if(lb) lb.textContent = '🌐 ' + (LANG === 'es' ? 'EN' : 'ES');
+  const ll = $('#langBtnLogin'); if(ll) ll.textContent = '🌐 ' + (LANG === 'es' ? 'EN' : 'ES');
+  const sb2 = $('#salirBtn'); if(sb2) sb2.textContent = tr('salir');
+  const lt = $('#li-titulo'); if(lt) lt.textContent = tr('login_titulo');
+  const lc = $('#li-lbl-correo'); if(lc) lc.textContent = tr('correo');
+  const lv = $('#li-lbl-clave'); if(lv) lv.textContent = tr('clave');
+  const ln = $('#li-btn'); if(ln) ln.textContent = tr('entrar');
+  pintarModo();
+  pintar();
+}
+async function salir(){
+  try { if(sb) await sb.auth.signOut(); } catch(e){}
+  location.reload();
+}
+
+/* ---------- Enviar pedidos por correo ---------- */
+const CORREO_VENTAS = 'Sales@drypical.com';
+const CORREO_PEDIDOS = CORREO_VENTAS + ',Info@Drypical.com';
+function enviarSeleccion(){
+  const items = Object.keys(SELECCION);
+  if(!items.length) return;
+  const tienda = prompt(tr('pedirTiendaPrompt'));
+  if(tienda === null) return;
+  const total = items.reduce((s,n) => s + (SELECCION[n] || 0), 0);
+  let cuerpo = tr('asuntoPedido') + ' — ' + fmtFecha(hoyISO()) + '\n';
+  if(tienda.trim()) cuerpo += tr('lblTienda') + ': ' + tienda.trim() + '\n';
+  cuerpo += '\n' + items.map(n => '• ' + n + ' × ' + SELECCION[n]).join('\n');
+  cuerpo += '\n\n' + tr('totalLbl') + total + ' ' + tr('unidades') + '\n\n' + tr('generadoApp');
+  const asunto = tr('asuntoPedido') + (tienda.trim() ? ' — ' + tienda.trim() : '') + ' — ' + fmtFecha(hoyISO());
+  location.href = 'mailto:' + CORREO_PEDIDOS + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo);
+}
+function enviarDespacho(id){
+  const d = DB.despachos.find(x => x.id === id); if(!d) return;
+  const tnd = tiendaPorId(d.tiendaId);
+  let cuerpo = tr('asuntoDespacho') + '\n'
+    + tr('lblTienda') + ': ' + (tnd ? tnd.nombre : tr('tiendaBorrada')) + '\n'
+    + tr('lblFecha') + ': ' + fmtFecha(d.fecha) + (d.hora ? ' · ' + d.hora : '') + '\n'
+    + tr('lblEstado') + ': ' + estadoTxt(d.estado) + '\n\n'
+    + (d.lineas || []).map(l => '• ' + l.nombre + ' × ' + l.cantidad + (l.caducidad ? tr('caducaLinea') + fmtFecha(l.caducidad) : '') + (Number(l.precio) ? ' · ' + dinero(l.precio) + tr('cU') : '')).join('\n')
+    + (totalDespacho(d) ? '\n\n' + tr('totalLbl') + dinero(totalDespacho(d)) : '')
+    + (d.notas ? '\n\n' + tr('lblNotas') + ': ' + d.notas : '')
+    + '\n\n' + tr('generadoApp');
+  const asunto = tr('asuntoDespacho') + ' — ' + (tnd ? tnd.nombre : '') + ' — ' + fmtFecha(d.fecha);
+  location.href = 'mailto:' + CORREO_PEDIDOS + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpo);
+}
+
 /* ---------- Almacenamiento ---------- */
 function guardarLocal(){ localStorage.setItem('drypical_db_v1', JSON.stringify(DB)); }
 function cargarLocal(){
@@ -140,13 +225,13 @@ async function cargarNube(){
   if(!DB.productos.length){ for(const n of PRODUCTOS_BASE){ await guardar('productos', { id: uid()+Math.random().toString(36).slice(2,6), nombre: n }); } await cargarNube(); }
 }
 async function guardar(tabla, obj){
-  if(NUBE){ const { error } = await sb.from(tabla).upsert(obj); if(error){ alert('Error al guardar en la nube: ' + error.message); throw error; } }
+  if(NUBE){ const { error } = await sb.from(tabla).upsert(obj); if(error){ alert(tr('errGuardar') + error.message); throw error; } }
   const arr = DB[tabla]; const i = arr.findIndex(x => x.id === obj.id);
   if(i >= 0) arr[i] = obj; else arr.push(obj);
   if(!NUBE) guardarLocal();
 }
 async function borrar(tabla, id){
-  if(NUBE){ const { error } = await sb.from(tabla).delete().eq('id', id); if(error){ alert('Error al borrar: ' + error.message); return; } }
+  if(NUBE){ const { error } = await sb.from(tabla).delete().eq('id', id); if(error){ alert(tr('errBorrar') + error.message); return; } }
   DB[tabla] = DB[tabla].filter(x => x.id !== id);
   if(!NUBE) guardarLocal();
   pintar();
@@ -162,7 +247,7 @@ $('#fabBtn').addEventListener('click', () => {
 function pintar(){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('act', b.dataset.vista === vista));
   ['panel','tiendas','despachos','productos'].forEach(v => $('#vista-'+v).classList.toggle('oculto', v !== vista));
-  $('#fabBtn').textContent = vista === 'tiendas' ? '+ Tienda' : vista === 'productos' ? '+ Producto' : '+ Despacho';
+  $('#fabBtn').textContent = vista === 'tiendas' ? tr('fab_tienda') : vista === 'productos' ? tr('fab_producto') : tr('fab_despacho');
   if(vista === 'panel') pintarPanel();
   if(vista === 'tiendas') pintarTiendas();
   if(vista === 'despachos') pintarDespachos();
@@ -174,7 +259,7 @@ function vencimientos(){
   const out = [];
   DB.despachos.filter(d => d.estado === 'Entregado').forEach(d => (d.lineas||[]).forEach(l => {
     const dd = diasHasta(l.caducidad);
-    if(dd !== null && dd <= 30) out.push({ tienda: (tiendaPorId(d.tiendaId)||{}).nombre || 'Tienda borrada', producto: l.nombre, caducidad: l.caducidad, dias: dd, cantidad: l.cantidad });
+    if(dd !== null && dd <= 30) out.push({ tienda: (tiendaPorId(d.tiendaId)||{}).nombre || tr('tiendaBorrada'), producto: l.nombre, caducidad: l.caducidad, dias: dd, cantidad: l.cantidad });
   }));
   return out.sort((a,b) => a.dias - b.dias);
 }
@@ -185,16 +270,16 @@ function pintarPanel(){
   const mes = hoyISO().slice(0,7);
   const ventasMes = DB.despachos.filter(d => (d.fecha||'').startsWith(mes) && d.estado !== 'Cancelado').reduce((s,d) => s + totalDespacho(d), 0);
   let h = '<div class="grid2">'
-    + '<div class="card"><h3>Ventas del mes</h3><div class="tot">' + dinero(ventasMes) + '</div><div class="muted">' + DB.despachos.filter(d => (d.fecha||'').startsWith(mes)).length + ' despachos este mes</div></div>'
-    + '<div class="card"><h3>Tiendas activas</h3><div class="tot">' + DB.tiendas.length + '</div><div class="muted">Visitas hoy (' + hoyDia + '): ' + visitasHoy.length + '</div></div></div>';
-  h += '<div class="card"><h3>📍 Visitas de hoy · ' + hoyDia + '</h3>';
-  h += visitasHoy.length ? visitasHoy.map(t => '<div class="row"><div class="sp"><b>' + esc(t.nombre) + '</b><div class="muted">' + esc(t.ruta||'') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + (t.direccion ? ' · ' + esc(t.direccion) : '') + '</div></div><button class="btn sec chico" onclick="formDespacho(\'' + t.id + '\')">Despachar</button></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">Sin visitas programadas para hoy.</div>';
+    + '<div class="card"><h3>' + tr('ventasMes') + '</h3><div class="tot">' + dinero(ventasMes) + '</div><div class="muted">' + DB.despachos.filter(d => (d.fecha||'').startsWith(mes)).length + ' ' + tr('despachosEsteMes') + '</div></div>'
+    + '<div class="card"><h3>' + tr('tiendasActivas') + '</h3><div class="tot">' + DB.tiendas.length + '</div><div class="muted">' + tr('visitasHoyLbl') + ' (' + diaTxt(hoyDia) + '): ' + visitasHoy.length + '</div></div></div>';
+  h += '<div class="card"><h3>' + tr('visitasDeHoy') + diaTxt(hoyDia) + '</h3>';
+  h += visitasHoy.length ? visitasHoy.map(t => '<div class="row"><div class="sp"><b>' + esc(t.nombre) + '</b><div class="muted">' + esc(t.ruta||'') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + (t.direccion ? ' · ' + esc(t.direccion) : '') + '</div></div><button class="btn sec chico" onclick="formDespacho(\'' + t.id + '\')">' + tr('despachar') + '</button></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">' + tr('sinVisitas') + '</div>';
   h += '</div>';
-  h += '<div class="card"><h3>⏰ Productos por vencer (30 días)</h3>';
-  h += venc.length ? venc.map(v => '<div class="row"><span class="badge ' + (v.dias < 0 ? 'b-rojo' : v.dias <= 7 ? 'b-rojo' : 'b-amar') + '">' + (v.dias < 0 ? 'VENCIDO' : v.dias + ' días') + '</span><div class="sp"><b>' + esc(v.producto) + '</b> · ' + v.cantidad + ' uds<div class="muted">En: ' + esc(v.tienda) + ' · caduca ' + fmtFecha(v.caducidad) + '</div></div></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">Nada por vencer en los próximos 30 días. 🎉</div>';
+  h += '<div class="card"><h3>' + tr('porVencer') + '</h3>';
+  h += venc.length ? venc.map(v => '<div class="row"><span class="badge ' + (v.dias < 0 ? 'b-rojo' : v.dias <= 7 ? 'b-rojo' : 'b-amar') + '">' + (v.dias < 0 ? tr('vencido') : v.dias + ' ' + tr('dias')) + '</span><div class="sp"><b>' + esc(nombreTxt(v.producto)) + '</b> · ' + v.cantidad + ' ' + tr('uds') + '<div class="muted">' + tr('enLbl') + esc(v.tienda) + ' · ' + tr('caducaLbl') + fmtFecha(v.caducidad) + '</div></div></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">' + tr('nadaPorVencer') + '</div>';
   h += '</div>';
-  h += '<div class="card"><h3>🗓️ Ruta de la semana</h3>';
-  h += DIAS_ORDEN.map(dia => { const ts = DB.tiendas.filter(t => t.diaVisita === dia); return '<div class="row"><b style="min-width:86px">' + dia + '</b><div class="sp muted">' + (ts.length ? ts.map(t => esc(t.nombre)).join(', ') : '—') + '</div></div>'; }).join('');
+  h += '<div class="card"><h3>' + tr('rutaSemana') + '</h3>';
+  h += DIAS_ORDEN.map(dia => { const ts = DB.tiendas.filter(t => t.diaVisita === dia); return '<div class="row"><b style="min-width:86px">' + diaTxt(dia) + '</b><div class="sp muted">' + (ts.length ? ts.map(t => esc(t.nombre)).join(', ') : '—') + '</div></div>'; }).join('');
   h += '</div>';
   $('#vista-panel').innerHTML = h;
 }
@@ -202,37 +287,36 @@ function pintarPanel(){
 /* ---------- Tiendas ---------- */
 function pintarTiendas(){
   const el = $('#vista-tiendas');
-  if(!DB.tiendas.length){ el.innerHTML = '<div class="card vacio">Todavía no hay tiendas.<br>Toca <b>+ Tienda</b> para registrar la primera.</div>'; return; }
+  if(!DB.tiendas.length){ el.innerHTML = '<div class="card vacio">' + tr('sinTiendas') + '</div>'; return; }
   const orden = t => DIAS_ORDEN.indexOf(t.diaVisita);
   el.innerHTML = [...DB.tiendas].sort((a,b) => orden(a) - orden(b)).map(t => '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t.nombre) + '</h3>'
     + '<div class="muted">' + (t.contacto ? '👤 ' + esc(t.contacto) + ' · ' : '') + (t.telefono ? '<a class="tel" href="tel:' + esc(t.telefono) + '">' + esc(t.telefono) + '</a>' : '') + '</div>'
-    + (t.direccion ? '<div class="muted">📍 ' + esc(t.direccion) + (t.ciudad ? ', ' + esc(t.ciudad) : '') + ' · <a class="tel" target="_blank" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((t.direccion||'') + ' ' + (t.ciudad||'')) + '">Mapa</a></div>' : '')
-    + '<div style="margin-top:6px"><span class="badge b-verde">' + esc(t.diaVisita || 'Sin día') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + '</span> ' + (t.ruta ? '<span class="badge b-nar">' + esc(t.ruta) + '</span>' : '') + '</div>'
+    + (t.direccion ? '<div class="muted">📍 ' + esc(t.direccion) + (t.ciudad ? ', ' + esc(t.ciudad) : '') + ' · <a class="tel" target="_blank" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((t.direccion||'') + ' ' + (t.ciudad||'')) + '">' + tr('mapa') + '</a></div>' : '')
+    + '<div style="margin-top:6px"><span class="badge b-verde">' + esc(t.diaVisita ? diaTxt(t.diaVisita) : tr('sinDia')) + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + '</span> ' + (t.ruta ? '<span class="badge b-nar">' + esc(t.ruta) + '</span>' : '') + '</div>'
     + (t.notas ? '<div class="muted" style="margin-top:6px">' + esc(t.notas) + '</div>' : '')
-    + '</div></div><div class="row" style="margin-top:10px"><button class="btn chico" onclick="formDespacho(\'' + t.id + '\')">+ Despacho</button><button class="btn sec chico" onclick="formTienda(\'' + t.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar esta tienda?\'))borrar(\'tiendas\',\'' + t.id + '\')">Borrar</button></div></div>').join('');
+    + '</div></div><div class="row" style="margin-top:10px"><button class="btn chico" onclick="formDespacho(\'' + t.id + '\')">' + tr('btnDespacho') + '</button><button class="btn sec chico" onclick="formTienda(\'' + t.id + '\')">' + tr('editar') + '</button><button class="btn rojo chico" onclick="if(confirm(tr(\'confirmBorrarTienda\')))borrar(\'tiendas\',\'' + t.id + '\')">' + tr('borrar') + '</button></div></div>').join('');
 }
 function formTienda(id){
   const t = id ? tiendaPorId(id) : { nombre:'', contacto:'', telefono:'', direccion:'', ciudad:'', ruta:'', diaVisita:'Lunes', horaVisita:'', notas:'' };
-  abrirHoja('<h2>' + (id ? 'Editar tienda' : 'Nueva tienda') + '</h2>'
-  + '<label>Nombre de la tienda *</label><input id="f-nombre" value="' + escA(t.nombre) + '">'
-  + '<div class="grid2"><div><label>Persona de contacto</label><input id="f-contacto" value="' + escA(t.contacto) + '"></div><div><label>Teléfono</label><input id="f-telefono" type="tel" value="' + escA(t.telefono) + '"></div></div>'
-  + '<label>Dirección</label><input id="f-direccion" value="' + escA(t.direccion) + '">'
-  + '<div class="grid2"><div><label>Ciudad</label><input id="f-ciudad" value="' + escA(t.ciudad) + '"></div><div><label>Ruta / zona</label><input id="f-ruta" placeholder="Ej. Ruta Princeton" value="' + escA(t.ruta) + '"></div></div>'
-  + '<div class="grid2"><div><label>Día de visita</label><select id="f-dia">' + DIAS_ORDEN.map(d => '<option ' + (t.diaVisita === d ? 'selected' : '') + '>' + d + '</option>').join('') + '</select></div><div><label>Hora de visita</label><input id="f-hora" type="time" value="' + escA(t.horaVisita) + '"></div></div>'
-  + '<label>Notas</label><textarea id="f-notas">' + esc(t.notas) + '</textarea>'
-  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarTienda(\'' + (id||'') + '\')">Guardar tienda</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+  abrirHoja('<h2>' + (id ? tr('editarTienda') : tr('nuevaTienda')) + '</h2>'
+  + '<label>' + tr('fNombreTienda') + '</label><input id="f-nombre" value="' + escA(t.nombre) + '">'
+  + '<div class="grid2"><div><label>' + tr('fContacto') + '</label><input id="f-contacto" value="' + escA(t.contacto) + '"></div><div><label>' + tr('fTelefono') + '</label><input id="f-telefono" type="tel" value="' + escA(t.telefono) + '"></div></div>'
+  + '<label>' + tr('fDireccion') + '</label><input id="f-direccion" value="' + escA(t.direccion) + '">'
+  + '<div class="grid2"><div><label>' + tr('fCiudad') + '</label><input id="f-ciudad" value="' + escA(t.ciudad) + '"></div><div><label>' + tr('fRuta') + '</label><input id="f-ruta" placeholder="' + tr('fRutaEj') + '" value="' + escA(t.ruta) + '"></div></div>'
+  + '<div class="grid2"><div><label>' + tr('fDiaVisita') + '</label><select id="f-dia">' + DIAS_ORDEN.map(d => '<option value="' + d + '" ' + (t.diaVisita === d ? 'selected' : '') + '>' + diaTxt(d) + '</option>').join('') + '</select></div><div><label>' + tr('fHoraVisita') + '</label><input id="f-hora" type="time" value="' + escA(t.horaVisita) + '"></div></div>'
+  + '<label>' + tr('fNotas') + '</label><textarea id="f-notas">' + esc(t.notas) + '</textarea>'
+  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarTienda(\'' + (id||'') + '\')">' + tr('guardarTienda') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cancelar') + '</button></div>');
 }
 async function guardarTienda(id){
-  const nombre = $('#f-nombre').value.trim(); if(!nombre){ alert('El nombre de la tienda es obligatorio.'); return; }
+  const nombre = $('#f-nombre').value.trim(); if(!nombre){ alert(tr('alertNombreTienda')); return; }
   await guardar('tiendas', { id: id || uid(), nombre, contacto: $('#f-contacto').value.trim(), telefono: $('#f-telefono').value.trim(), direccion: $('#f-direccion').value.trim(), ciudad: $('#f-ciudad').value.trim(), ruta: $('#f-ruta').value.trim(), diaVisita: $('#f-dia').value, horaVisita: $('#f-hora').value, notas: $('#f-notas').value.trim() });
   cerrarHoja(); vista = 'tiendas'; pintar();
 }
 
 /* ---------- Productos ---------- */
 /* Fotos verificadas limpias una por una (logo completo integrado en la
-   bolsa, texto nítido, sin logo montado): piña rehecha 6-oct y las de
-   imagine_media revisadas el 8-oct. La de mango trae el logo completo
-   pero sin el título del sabor; la tarjeta de la app lo rotula. */
+   bolsa, texto nítido, sin logo montado). Formato uniforme 540×420 y
+   object-fit:contain: la bolsa siempre entera, sin recortes (8-oct). */
 const FOTOS_SABOR = [
   { clave: 'Piña', foto: 'img/pouch-pina.webp' },
   { clave: 'Mango', foto: 'img/pouch-mango.webp' },
@@ -258,31 +342,31 @@ function selCambiar(nombre, delta){
 function selLimpiar(){ SELECCION = {}; selGuardar(); pintarProductos(); }
 function pintarProductos(){
   const el = $('#vista-productos');
-  if(!DB.productos.length){ el.innerHTML = '<div class="card vacio">Sin productos todavía.</div>'; return; }
+  if(!DB.productos.length){ el.innerHTML = '<div class="card vacio">' + tr('sinProductos') + '</div>'; return; }
   const grupos = {};
   DB.productos.forEach(p => { const s = saborDe(p.nombre); (grupos[s] = grupos[s] || []).push(p); });
   const sabores = Object.keys(grupos).sort((a,b) => { const ia = ORDEN_SABORES.indexOf(a), ib = ORDEN_SABORES.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
   const totalSel = Object.values(SELECCION).reduce((s,n) => s + n, 0);
-  let h = '<div class="card"><div class="row"><div class="sp"><h3>🧮 Selección rápida</h3><div class="muted">Toca + en cada presentación y la cantidad se va sumando aquí. Sirve para contar un despacho antes de registrarlo.</div></div></div>'
-    + '<div class="row" style="margin-top:8px"><span class="tot">' + totalSel + ' unidades</span>' + (totalSel ? '<button class="btn sec chico" onclick="selLimpiar()">Limpiar</button>' : '') + '</div>'
-    + (totalSel ? '<div class="muted" style="margin-top:6px">' + Object.keys(SELECCION).map(n => esc(n) + ' × ' + SELECCION[n]).join(' · ') + '</div>' : '')
+  let h = '<div class="card"><div class="row"><div class="sp"><h3>' + tr('selRapida') + '</h3><div class="muted">' + tr('selRapidaDesc') + '</div></div></div>'
+    + '<div class="row" style="margin-top:8px"><span class="tot">' + totalSel + ' ' + tr('unidades') + '</span>' + (totalSel ? '<button class="btn sec chico" onclick="selLimpiar()">' + tr('limpiar') + '</button><button class="btn naranja chico" onclick="enviarSeleccion()">' + tr('enviarPedido') + '</button>' : '') + '</div>'
+    + (totalSel ? '<div class="muted" style="margin-top:6px">' + Object.keys(SELECCION).map(n => esc(nombreTxt(n)) + ' × ' + SELECCION[n]).join(' · ') + '</div>' : '')
     + '</div>';
   h += '<div class="prod-grid">' + sabores.map(s => {
     const foto = fotoDe(s);
     const pres = grupos[s].map(p => '<div class="pres"><span><b>' + esc(p.nombre.replace(s, '').replace(/^\s*·\s*/, '').trim() || p.nombre) + '</b></span>'
       + '<span class="paso"><button onclick="selCambiar(\'' + escA(p.nombre) + '\',-1)" aria-label="Quitar uno">−</button><span class="n">' + (SELECCION[p.nombre] || 0) + '</span><button onclick="selCambiar(\'' + escA(p.nombre) + '\',1)" aria-label="Agregar uno">+</button></span>'
-      + '<button class="mini" onclick="formProducto(\'' + p.id + '\')">editar</button></div>').join('');
-    return '<div class="prod-card">' + (foto ? '<img class="foto" src="' + foto + '" alt="Bolsa Drypical ' + escA(s) + '">' : '<div class="sinfoto"><span style="font-size:30px">🍓</span>Foto de la bolsa por rehacer<div>(la actual trae el texto borroso)</div></div>')
-      + '<div class="cuerpo"><h3>' + esc(s) + '</h3>' + pres + '</div></div>';
+      + '<button class="mini" onclick="formProducto(\'' + p.id + '\')">' + tr('editarMin') + '</button></div>').join('');
+    return '<div class="prod-card">' + (foto ? '<img class="foto" src="' + foto + '" alt="' + tr('bolsaAlt') + escA(saborTxt(s)) + '">' : '<div class="sinfoto"><span style="font-size:30px">🍓</span>' + tr('sinFotoTitulo') + '<div>' + tr('sinFotoSub') + '</div></div>')
+      + '<div class="cuerpo"><h3>' + esc(saborTxt(s)) + '</h3>' + pres + '</div></div>';
   }).join('') + '</div>';
   el.innerHTML = h;
 }
 function formProducto(id){
   const p = id ? DB.productos.find(x => x.id === id) : { nombre:'' };
-  abrirHoja('<h2>' + (id ? 'Editar producto' : 'Nuevo producto') + '</h2><label>Nombre (sabor y presentación)</label><input id="f-pnombre" placeholder="Ej. Piña 40 g" value="' + escA(p.nombre) + '"><div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarProducto(\'' + (id||'') + '\')">Guardar</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button>' + (id ? '<button class="btn rojo" onclick="if(confirm(\'¿Borrar este producto?\')){ cerrarHoja(); borrar(\'productos\',\'' + id + '\'); }">Borrar</button>' : '') + '</div>');
+  abrirHoja('<h2>' + (id ? tr('editarProducto') : tr('nuevoProducto')) + '</h2><label>' + tr('fNombreProd') + '</label><input id="f-pnombre" placeholder="' + tr('fNombreProdEj') + '" value="' + escA(p.nombre) + '"><div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarProducto(\'' + (id||'') + '\')">' + tr('guardar') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cancelar') + '</button>' + (id ? '<button class="btn rojo" onclick="if(confirm(tr(\'confirmBorrarProd\'))){ cerrarHoja(); borrar(\'productos\',\'' + id + '\'); }">' + tr('borrar') + '</button>' : '') + '</div>');
 }
 async function guardarProducto(id){
-  const nombre = $('#f-pnombre').value.trim(); if(!nombre){ alert('Escribe el nombre del producto.'); return; }
+  const nombre = $('#f-pnombre').value.trim(); if(!nombre){ alert(tr('alertNombreProd')); return; }
   await guardar('productos', { id: id || uid(), nombre });
   cerrarHoja(); vista = 'productos'; pintar();
 }
@@ -291,39 +375,39 @@ async function guardarProducto(id){
 let lineasTemp = [];
 function pintarDespachos(){
   const el = $('#vista-despachos');
-  if(!DB.despachos.length){ el.innerHTML = '<div class="card vacio">Todavía no hay despachos registrados.<br>Toca <b>+ Despacho</b> para crear el primero.</div>'; return; }
+  if(!DB.despachos.length){ el.innerHTML = '<div class="card vacio">' + tr('sinDespachos') + '</div>'; return; }
   el.innerHTML = [...DB.despachos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).map(d => {
     const t = tiendaPorId(d.tiendaId);
     const badge = d.estado === 'Entregado' ? 'b-verde' : d.estado === 'Cancelado' ? 'b-rojo' : 'b-amar';
-    return '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t ? t.nombre : 'Tienda borrada') + '</h3><div class="muted">' + fmtFecha(d.fecha) + (d.hora ? ' · ' + esc(d.hora) : '') + (d.repartidor ? ' · 🚚 ' + esc(d.repartidor) : '') + '</div></div><span class="badge ' + badge + '">' + esc(d.estado) + '</span></div>'
-    + '<div style="margin-top:6px">' + (d.lineas||[]).map(l => '<div class="muted">• ' + esc(l.nombre) + ' × ' + l.cantidad + (l.caducidad ? ' · caduca ' + fmtFecha(l.caducidad) : '') + (Number(l.precio) ? ' · ' + dinero(l.precio) + ' c/u' : '') + '</div>').join('') + '</div>'
-    + (totalDespacho(d) ? '<div class="tot" style="margin-top:6px">Total: ' + dinero(totalDespacho(d)) + '</div>' : '')
+    return '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t ? t.nombre : tr('tiendaBorrada')) + '</h3><div class="muted">' + folioDe(d) + ' · ' + fmtFecha(d.fecha) + (d.hora ? ' · ' + esc(d.hora) : '') + (d.repartidor ? ' · 🚚 ' + esc(d.repartidor) : '') + '</div></div><span class="badge ' + badge + '">' + esc(estadoTxt(d.estado)) + '</span></div>'
+    + '<div style="margin-top:6px">' + (d.lineas||[]).map(l => '<div class="muted">• ' + esc(nombreTxt(l.nombre)) + ' × ' + l.cantidad + (l.caducidad ? tr('caducaLinea') + fmtFecha(l.caducidad) : '') + (Number(l.precio) ? ' · ' + dinero(l.precio) + tr('cU') : '') + '</div>').join('') + '</div>'
+    + (totalDespacho(d) ? '<div class="tot" style="margin-top:6px">' + tr('totalLbl') + dinero(totalDespacho(d)) + '</div>' : '')
     + (d.notas ? '<div class="muted" style="margin-top:4px">' + esc(d.notas) + '</div>' : '')
-    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="formDespacho(null,\'' + d.id + '\')">Editar</button><button class="btn rojo chico" onclick="if(confirm(\'¿Borrar este despacho?\'))borrar(\'despachos\',\'' + d.id + '\')">Borrar</button></div></div>';
+    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="verHoja(\'' + d.id + '\')">' + tr('hojaBtn') + '</button><button class="btn chico" onclick="enviarDespacho(\'' + d.id + '\')">' + tr('enviar') + '</button><button class="btn sec chico" onclick="formDespacho(null,\'' + d.id + '\')">' + tr('editar') + '</button><button class="btn rojo chico" onclick="if(confirm(tr(\'confirmBorrarDesp\')))borrar(\'despachos\',\'' + d.id + '\')">' + tr('borrar') + '</button></div></div>';
   }).join('');
 }
 function formDespacho(tiendaId, despachoId){
   const d = despachoId ? DB.despachos.find(x => x.id === despachoId) : null;
   lineasTemp = d ? JSON.parse(JSON.stringify(d.lineas || [])) : [];
   if(!lineasTemp.length) lineasTemp = [ { nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0, caducidad: '' } ];
-  abrirHoja('<h2>' + (d ? 'Editar despacho' : 'Nuevo despacho') + '</h2>'
-  + '<label>Tienda *</label><select id="f-tienda">' + DB.tiendas.map(t => '<option value="' + t.id + '" ' + ((d ? d.tiendaId : tiendaId) === t.id ? 'selected' : '') + '>' + esc(t.nombre) + '</option>').join('') + '</select>'
-  + (DB.tiendas.length ? '' : '<p class="muted" style="color:var(--rojo)">Primero registra una tienda en la pestaña Tiendas.</p>')
-  + '<div class="grid2"><div><label>Fecha</label><input id="f-fecha" type="date" value="' + (d ? d.fecha : hoyISO()) + '"></div><div><label>Hora</label><input id="f-hora2" type="time" value="' + (d ? d.hora || '' : '') + '"></div></div>'
-  + '<div class="grid2"><div><label>Repartidor / empleado</label><input id="f-repartidor" value="' + escA(d ? d.repartidor : '') + '"></div><div><label>Estado</label><select id="f-estado">' + ['Pendiente','Entregado','Cancelado'].map(e => '<option ' + ((d ? d.estado : 'Pendiente') === e ? 'selected' : '') + '>' + e + '</option>').join('') + '</select></div></div>'
-  + '<label>Productos despachados</label><div id="f-lineas"></div>'
-  + '<button class="btn sec chico" style="margin-top:10px" onclick="agregarLinea()">+ Agregar producto</button>'
-  + '<div class="row" style="margin-top:12px"><span class="sp muted">Total del despacho</span><span class="tot" id="f-total">$0.00</span></div>'
-  + '<label>Notas</label><textarea id="f-notas2">' + esc(d ? d.notas : '') + '</textarea>'
-  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarDespacho(\'' + (despachoId||'') + '\')">Guardar despacho</button><button class="btn sec" onclick="cerrarHoja()">Cancelar</button></div>');
+  abrirHoja('<h2>' + (d ? tr('editarDespacho') : tr('nuevoDespacho')) + '</h2>'
+  + '<label>' + tr('fTienda') + '</label><select id="f-tienda">' + DB.tiendas.map(t => '<option value="' + t.id + '" ' + ((d ? d.tiendaId : tiendaId) === t.id ? 'selected' : '') + '>' + esc(t.nombre) + '</option>').join('') + '</select>'
+  + (DB.tiendas.length ? '' : '<p class="muted" style="color:var(--rojo)">' + tr('primeroTienda') + '</p>')
+  + '<div class="grid2"><div><label>' + tr('fFecha') + '</label><input id="f-fecha" type="date" value="' + (d ? d.fecha : hoyISO()) + '"></div><div><label>' + tr('fHora') + '</label><input id="f-hora2" type="time" value="' + (d ? d.hora || '' : '') + '"></div></div>'
+  + '<div class="grid2"><div><label>' + tr('fRepartidor') + '</label><input id="f-repartidor" value="' + escA(d ? d.repartidor : '') + '"></div><div><label>' + tr('fEstado') + '</label><select id="f-estado">' + ['Pendiente','Entregado','Cancelado'].map(e => '<option value="' + e + '" ' + ((d ? d.estado : 'Pendiente') === e ? 'selected' : '') + '>' + estadoTxt(e) + '</option>').join('') + '</select></div></div>'
+  + '<label>' + tr('fProdsDesp') + '</label><div id="f-lineas"></div>'
+  + '<button class="btn sec chico" style="margin-top:10px" onclick="agregarLinea()">' + tr('agregarProducto') + '</button>'
+  + '<div class="row" style="margin-top:12px"><span class="sp muted">' + tr('totalDespachoLbl') + '</span><span class="tot" id="f-total">$0.00</span></div>'
+  + '<label>' + tr('fNotas') + '</label><textarea id="f-notas2">' + esc(d ? d.notas : '') + '</textarea>'
+  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarDespacho(\'' + (despachoId||'') + '\')">' + tr('guardarDespacho') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cancelar') + '</button></div>');
   pintarLineas();
 }
 function pintarLineas(){
   const cont = $('#f-lineas'); if(!cont) return;
-  cont.innerHTML = lineasTemp.map((l,i) => '<div class="linea"><label>Producto</label><select onchange="lineaCambio(' + i + ',\'nombre\',this.value)">' + DB.productos.map(p => '<option ' + (l.nombre === p.nombre ? 'selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>'
-  + '<div class="grid2"><div><label>Cantidad</label><input type="number" min="0" value="' + l.cantidad + '" oninput="lineaCambio(' + i + ',\'cantidad\',this.value)"></div><div><label>Precio c/u ($)</label><input type="number" min="0" step="0.01" value="' + l.precio + '" oninput="lineaCambio(' + i + ',\'precio\',this.value)"></div></div>'
-  + '<label>Fecha de caducidad</label><input type="date" value="' + (l.caducidad||'') + '" onchange="lineaCambio(' + i + ',\'caducidad\',this.value)">'
-  + '<button class="btn rojo chico" style="margin-top:8px" onclick="quitarLinea(' + i + ')">Quitar producto</button></div>').join('');
+  cont.innerHTML = lineasTemp.map((l,i) => '<div class="linea"><label>' + tr('fProducto') + '</label><select onchange="lineaCambio(' + i + ',\'nombre\',this.value)">' + DB.productos.map(p => '<option value="' + escA(p.nombre) + '" ' + (l.nombre === p.nombre ? 'selected' : '') + '>' + esc(nombreTxt(p.nombre)) + '</option>').join('') + '</select>'
+  + '<div class="grid2"><div><label>' + tr('fCantidad') + '</label><input type="number" min="0" value="' + l.cantidad + '" oninput="lineaCambio(' + i + ',\'cantidad\',this.value)"></div><div><label>' + tr('fPrecio') + '</label><input type="number" min="0" step="0.01" value="' + l.precio + '" oninput="lineaCambio(' + i + ',\'precio\',this.value)"></div></div>'
+  + '<label>' + tr('fCaducidad') + '</label><input type="date" value="' + (l.caducidad||'') + '" onchange="lineaCambio(' + i + ',\'caducidad\',this.value)">'
+  + '<button class="btn rojo chico" style="margin-top:8px" onclick="quitarLinea(' + i + ')">' + tr('quitarProducto') + '</button></div>').join('');
   const tot = lineasTemp.reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
   const el = $('#f-total'); if(el) el.textContent = dinero(tot);
 }
@@ -332,10 +416,47 @@ function pintarLineasRefrescaTotal(){ const tot = lineasTemp.reduce((s,l) => s +
 function agregarLinea(){ lineasTemp.push({ nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0, caducidad: '' }); pintarLineas(); }
 function quitarLinea(i){ lineasTemp.splice(i,1); if(!lineasTemp.length) agregarLinea(); else pintarLineas(); }
 async function guardarDespacho(id){
-  const tiendaId = $('#f-tienda').value; if(!tiendaId){ alert('Registra primero una tienda.'); return; }
-  await guardar('despachos', { id: id || uid(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
+  const tiendaId = $('#f-tienda').value; if(!tiendaId){ alert(tr('alertPrimeroTienda')); return; }
+  const previo = id ? DB.despachos.find(x => x.id === id) : null;
+  await guardar('despachos', { id: id || uid(), folio: previo ? (previo.folio || folioDe(previo)) : siguienteFolio(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
   cerrarHoja(); vista = 'despachos'; pintar();
 }
+
+
+/* ---------- Hoja de pedido ---------- */
+function folioDe(d){
+  if(d.folio) return d.folio;
+  const orden = [...DB.despachos].sort((a,b) => (a.fecha || '').localeCompare(b.fecha || '') || String(a.id).localeCompare(String(b.id)));
+  const i = orden.findIndex(x => x.id === d.id);
+  return 'DRY-' + (1001 + (i < 0 ? 0 : i));
+}
+function siguienteFolio(){
+  let max = 1000;
+  DB.despachos.forEach(x => { const m = /^DRY-(\d+)$/.exec(x.folio || ''); if(m) max = Math.max(max, Number(m[1])); });
+  return 'DRY-' + (max + 1);
+}
+function verHoja(id){
+  const d = DB.despachos.find(x => x.id === id); if(!d) return;
+  const tnd = tiendaPorId(d.tiendaId) || {};
+  const filas = (d.lineas || []).map(l => '<tr><td>' + esc(nombreTxt(l.nombre)) + (l.caducidad ? '<div style="font-size:11px;color:#666">' + tr('fCaducidad') + ': ' + fmtFecha(l.caducidad) + '</div>' : '') + '</td><td style="text-align:center">' + (Number(l.cantidad) || 0) + '</td><td style="text-align:right">' + dinero(l.precio || 0) + '</td><td style="text-align:right">' + dinero((Number(l.cantidad) || 0) * (Number(l.precio) || 0)) + '</td></tr>').join('');
+  const sheet = '<div class="hoja-pedido">'
+    + '<div style="display:flex;gap:12px;align-items:center;border-bottom:3px solid var(--verde);padding-bottom:10px"><img src="logo.png" alt="Drypical" style="height:56px;width:auto;background:#fff;border-radius:8px"><div><div style="font-weight:800;font-size:17px;color:var(--verde)">DRYPICAL LLC</div><div style="font-size:12px;color:#5f6368">Real Fruit • Real Flavor<br>909 Mountain Laurel Rd, Princeton, TX 75407-5459<br>Tel. 469-515-2216 · Info@Drypical.com</div></div></div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px"><h2 style="margin:0;color:var(--verde)">' + tr('hojaTitulo') + '</h2><div style="text-align:right;font-size:13px"><div><b>' + tr('ordenNo') + ':</b> ' + folioDe(d) + '</div><div><b>' + tr('lblFecha') + ':</b> ' + fmtFecha(d.fecha) + (d.hora ? ' · ' + esc(d.hora) : '') + '</div><div><b>' + tr('lblEstado') + ':</b> ' + estadoTxt(d.estado) + '</div></div></div>'
+    + '<div style="margin-top:12px;font-size:14px;line-height:1.55"><div><b>' + tr('lblTienda') + ':</b> ' + esc(tnd.nombre || tr('tiendaBorrada')) + '</div>'
+    + (tnd.direccion ? '<div><b>' + tr('fDireccion') + ':</b> ' + esc(tnd.direccion) + (tnd.ciudad ? ', ' + esc(tnd.ciudad) : '') + '</div>' : '')
+    + (tnd.telefono ? '<div><b>' + tr('fTelefono') + ':</b> ' + esc(tnd.telefono) + '</div>' : '')
+    + (tnd.contacto ? '<div><b>' + tr('fContacto') + ':</b> ' + esc(tnd.contacto) + '</div>' : '')
+    + '<div><b>' + tr('entregadoPor') + ':</b> ' + esc(d.repartidor || '—') + '</div></div>'
+    + '<table><thead><tr><th>' + tr('fProducto') + '</th><th style="text-align:center;width:60px">' + tr('fCantidad') + '</th><th style="text-align:right;width:90px">' + tr('fPrecio') + '</th><th style="text-align:right;width:100px">' + tr('subtotal') + '</th></tr></thead><tbody>' + filas + '</tbody></table>'
+    + '<div style="text-align:right;margin-top:10px"><span class="tot">' + tr('totalLbl') + dinero(totalDespacho(d)) + '</span></div>'
+    + (d.notas ? '<div style="margin-top:10px;font-size:13px"><b>' + tr('lblNotas') + ':</b> ' + esc(d.notas) + '</div>' : '')
+    + '<div class="firmas"><div class="firma"><div class="linea-f">' + tr('firmaVendedor') + '</div><div class="nombre-f">' + esc(d.repartidor || '') + '</div></div><div class="firma"><div class="linea-f">' + tr('firmaGerente') + '</div><div class="nombre-f">' + esc(tnd.contacto || '') + '</div></div></div>'
+    + '<div style="text-align:center;margin-top:26px;font-size:12px;color:#5f6368">' + tr('gracias') + ' · Real Fruit • Real Flavor</div>'
+    + '</div>';
+  abrirHoja(sheet + '<div class="row" style="margin-top:18px"><button class="btn sp" onclick="imprimirHoja()">' + tr('imprimir') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cerrar') + '</button></div>');
+  $('#imprimible').innerHTML = sheet;
+}
+function imprimirHoja(){ window.print(); }
 
 /* ---------- Utilidades UI ---------- */
 function abrirHoja(html){ $('#hoja').innerHTML = html; $('#modal').classList.add('ab'); window.scrollTo(0,0); }
@@ -346,25 +467,27 @@ function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
 
 /* ---------- Arranque ---------- */
 async function iniciar(){
-  $('#modoBadge').textContent = NUBE ? '☁️ Nube' : 'Modo local';
+  pintarModo();
   if(NUBE){
     let espera = 0;
     while(!window.__crearSupabase && espera < 6000){ await new Promise(r => setTimeout(r, 150)); espera += 150; }
     sb = window.__crearSupabase(CFG.supabaseUrl, CFG.supabaseAnonKey);
     const { data } = await sb.auth.getSession();
-    if(!data.session){ $('#login').classList.add('ab'); return; }
+    if(!data.session){ $('#login').classList.add('ab'); aplicarIdioma(); return; }
+    $('#salirBtn').style.display = '';
     await cargarNube();
   } else {
     cargarLocal();
   }
-  pintar();
+  aplicarIdioma();
 }
 async function entrar(){
   const correo = $('#li-correo').value.trim(), clave = $('#li-clave').value;
   const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
-  if(error){ $('#li-error').textContent = 'No se pudo entrar: ' + error.message; return; }
+  if(error){ $('#li-error').textContent = tr('loginError') + error.message; return; }
   $('#login').classList.remove('ab');
-  await cargarNube(); pintar();
+  $('#salirBtn').style.display = '';
+  await cargarNube(); aplicarIdioma();
 }
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
 iniciar();
