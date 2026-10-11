@@ -88,12 +88,14 @@
   <button data-vista="panel" class="act">Panel</button>
   <button data-vista="tiendas">Tiendas</button>
   <button data-vista="despachos">Despachos</button>
+  <button data-vista="facturas">Facturas</button>
   <button data-vista="productos">Productos</button>
 </nav>
 <main>
   <section id="vista-panel"></section>
   <section id="vista-tiendas" class="oculto"></section>
   <section id="vista-despachos" class="oculto"></section>
+  <section id="vista-facturas" class="oculto"></section>
   <section id="vista-productos" class="oculto"></section>
 </main>
 <button class="fab" id="fabBtn">+ Nuevo</button>
@@ -129,7 +131,7 @@ let sb = null;
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DIAS_ORDEN = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const PRODUCTOS_BASE = ['Piña 40 g','Piña 200 g','Mango 40 g','Mango 200 g','Fresa 40 g','Fresa 200 g','Naranja 40 g','Naranja 200 g','Manzana 40 g','Manzana 200 g','Banana 40 g','Banana 200 g','Tropical Mix 40 g','Tropical Mix 200 g','Premium Garnish · Naranja 85 g'];
-let DB = { tiendas: [], productos: [], despachos: [] };
+let DB = { tiendas: [], productos: [], despachos: [], facturas: [] };
 let vista = 'panel';
 const $ = s => document.querySelector(s);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -143,8 +145,8 @@ const totalDespacho = d => (d.lineas||[]).reduce((s,l) => s + (Number(l.cantidad
 
 /* ---------- Idioma / Language ---------- */
 const TXT = {
-es:{appTitulo:'Pedidos y Rutas',salir:'Salir',modoNube:'☁️ Nube',modoLocal:'Modo local',nav_panel:'Panel',nav_tiendas:'Tiendas',nav_despachos:'Despachos',nav_productos:'Productos',fab_tienda:'+ Tienda',fab_producto:'+ Producto',fab_despacho:'+ Despacho',login_titulo:'Entrar a la app',correo:'Correo',clave:'Contraseña',entrar:'Entrar',loginError:'No se pudo entrar: ',ventasMes:'Ventas del mes',despachosEsteMes:'despachos este mes',tiendasActivas:'Tiendas activas',visitasHoyLbl:'Visitas hoy',visitasDeHoy:'📍 Visitas de hoy · ',sinVisitas:'Sin visitas programadas para hoy.',despachar:'Despachar',porVencer:'⏰ Productos por vencer (30 días)',vencido:'VENCIDO',dias:'días',enLbl:'En: ',caducaLbl:'caduca ',uds:'uds',nadaPorVencer:'Nada por vencer en los próximos 30 días. 🎉',rutaSemana:'🗓️ Ruta de la semana',sinTiendas:'Todavía no hay tiendas.<br>Toca <b>+ Tienda</b> para registrar la primera.',mapa:'Mapa',sinDia:'Sin día',btnDespacho:'+ Despacho',editar:'Editar',borrar:'Borrar',confirmBorrarTienda:'¿Borrar esta tienda?',nuevaTienda:'Nueva tienda',editarTienda:'Editar tienda',fNombreTienda:'Nombre de la tienda *',fContacto:'Persona de contacto',fTelefono:'Teléfono',fDireccion:'Dirección',fCiudad:'Ciudad',fRuta:'Ruta / zona',fRutaEj:'Ej. Ruta Princeton',fDiaVisita:'Día de visita',fHoraVisita:'Hora de visita',fNotas:'Notas',guardarTienda:'Guardar tienda',cancelar:'Cancelar',alertNombreTienda:'El nombre de la tienda es obligatorio.',sinProductos:'Sin productos todavía.',selRapida:'🧮 Selección rápida',selRapidaDesc:'Toca + en cada presentación y la cantidad se va sumando aquí. Sirve para contar un despacho antes de registrarlo.',unidades:'unidades',limpiar:'Limpiar',editarMin:'editar',sinFotoTitulo:'Foto de la bolsa pendiente',sinFotoSub:'(sin foto asignada)',editarProducto:'Editar producto',nuevoProducto:'Nuevo producto',fNombreProd:'Nombre (sabor y presentación)',fNombreProdEj:'Ej. Piña 40 g',guardar:'Guardar',confirmBorrarProd:'¿Borrar este producto?',alertNombreProd:'Escribe el nombre del producto.',sinDespachos:'Todavía no hay despachos registrados.<br>Toca <b>+ Despacho</b> para crear el primero.',caducaLinea:' · caduca ',cU:' c/u',totalLbl:'Total: ',tiendaBorrada:'Tienda borrada',nuevoDespacho:'Nuevo despacho',editarDespacho:'Editar despacho',fTienda:'Tienda *',primeroTienda:'Primero registra una tienda en la pestaña Tiendas.',fFecha:'Fecha',fHora:'Hora',fRepartidor:'Repartidor / empleado',fEstado:'Estado',fProdsDesp:'Productos despachados',agregarProducto:'+ Agregar producto',totalDespachoLbl:'Total del despacho',guardarDespacho:'Guardar despacho',alertPrimeroTienda:'Registra primero una tienda.',confirmBorrarDesp:'¿Borrar este despacho?',fProducto:'Producto',fCantidad:'Cantidad',fPrecio:'Precio c/u ($)',fCaducidad:'Fecha de caducidad',quitarProducto:'Quitar producto',est_Pendiente:'Pendiente',est_Entregado:'Entregado',est_Cancelado:'Cancelado','dia_Domingo':'Domingo','dia_Lunes':'Lunes','dia_Martes':'Martes','dia_Miércoles':'Miércoles','dia_Jueves':'Jueves','dia_Viernes':'Viernes','dia_Sábado':'Sábado',enviarPedido:'📧 Enviar pedido',enviar:'📧 Enviar',pedirTiendaPrompt:'¿Para qué tienda es el pedido? (puedes dejarlo vacío)',asuntoPedido:'Pedido Drypical',asuntoDespacho:'Despacho Drypical',lblTienda:'Tienda',lblFecha:'Fecha',lblEstado:'Estado',lblNotas:'Notas',generadoApp:'Generado desde la app Drypical — Pedidos y Rutas.',errGuardar:'Error al guardar en la nube: ',errBorrar:'Error al borrar: ',bolsaAlt:'Bolsa Drypical ',hojaBtn:'🧾 Hoja de pedido',hojaTitulo:'HOJA DE PEDIDO',ordenNo:'N.º de orden',entregadoPor:'Entregado por (vendedor)',firmaVendedor:'Firma y nombre del vendedor',firmaGerente:'Firma y nombre del gerente de tienda',imprimir:'🖨️ Imprimir / Guardar PDF',cerrar:'Cerrar',subtotal:'Subtotal',gracias:'¡Gracias por su compra!'},
-en:{appTitulo:'Orders & Routes',salir:'Log out',modoNube:'☁️ Cloud',modoLocal:'Local mode',nav_panel:'Dashboard',nav_tiendas:'Stores',nav_despachos:'Dispatches',nav_productos:'Products',fab_tienda:'+ Store',fab_producto:'+ Product',fab_despacho:'+ Dispatch',login_titulo:'Sign in to the app',correo:'Email',clave:'Password',entrar:'Sign in',loginError:'Could not sign in: ',ventasMes:'Sales this month',despachosEsteMes:'dispatches this month',tiendasActivas:'Active stores',visitasHoyLbl:'Visits today',visitasDeHoy:"📍 Today's visits · ",sinVisitas:'No visits scheduled for today.',despachar:'Dispatch',porVencer:'⏰ Expiring soon (30 days)',vencido:'EXPIRED',dias:'days',enLbl:'At: ',caducaLbl:'expires ',uds:'units',nadaPorVencer:'Nothing expiring in the next 30 days. 🎉',rutaSemana:"🗓️ This week's route",sinTiendas:'No stores yet.<br>Tap <b>+ Store</b> to register the first one.',mapa:'Map',sinDia:'No day set',btnDespacho:'+ Dispatch',editar:'Edit',borrar:'Delete',confirmBorrarTienda:'Delete this store?',nuevaTienda:'New store',editarTienda:'Edit store',fNombreTienda:'Store name *',fContacto:'Contact person',fTelefono:'Phone',fDireccion:'Address',fCiudad:'City',fRuta:'Route / area',fRutaEj:'E.g. Princeton Route',fDiaVisita:'Visit day',fHoraVisita:'Visit time',fNotas:'Notes',guardarTienda:'Save store',cancelar:'Cancel',alertNombreTienda:'The store name is required.',sinProductos:'No products yet.',selRapida:'🧮 Quick selection',selRapidaDesc:'Tap + on each size and the count adds up here. Use it to count a dispatch before registering it.',unidades:'units',limpiar:'Clear',editarMin:'edit',sinFotoTitulo:'Pouch photo pending',sinFotoSub:'(no photo assigned)',editarProducto:'Edit product',nuevoProducto:'New product',fNombreProd:'Name (flavor & size)',fNombreProdEj:'E.g. Pineapple 40 g',guardar:'Save',confirmBorrarProd:'Delete this product?',alertNombreProd:'Enter the product name.',sinDespachos:'No dispatches recorded yet.<br>Tap <b>+ Dispatch</b> to create the first one.',caducaLinea:' · expires ',cU:' each',totalLbl:'Total: ',tiendaBorrada:'Deleted store',nuevoDespacho:'New dispatch',editarDespacho:'Edit dispatch',fTienda:'Store *',primeroTienda:'First register a store in the Stores tab.',fFecha:'Date',fHora:'Time',fRepartidor:'Driver / employee',fEstado:'Status',fProdsDesp:'Dispatched products',agregarProducto:'+ Add product',totalDespachoLbl:'Dispatch total',guardarDespacho:'Save dispatch',alertPrimeroTienda:'Register a store first.',confirmBorrarDesp:'Delete this dispatch?',fProducto:'Product',fCantidad:'Quantity',fPrecio:'Price each ($)',fCaducidad:'Expiry date',quitarProducto:'Remove product',est_Pendiente:'Pending',est_Entregado:'Delivered',est_Cancelado:'Cancelled','dia_Domingo':'Sunday','dia_Lunes':'Monday','dia_Martes':'Tuesday','dia_Miércoles':'Wednesday','dia_Jueves':'Thursday','dia_Viernes':'Friday','dia_Sábado':'Saturday',enviarPedido:'📧 Email order',enviar:'📧 Email',pedirTiendaPrompt:'Which store is this order for? (you can leave it empty)',asuntoPedido:'Drypical order',asuntoDespacho:'Drypical dispatch',lblTienda:'Store',lblFecha:'Date',lblEstado:'Status',lblNotas:'Notes',generadoApp:'Generated from the Drypical app — Orders & Routes.',errGuardar:'Cloud save error: ',errBorrar:'Delete error: ',bolsaAlt:'Drypical pouch ',hojaBtn:'🧾 Order sheet',hojaTitulo:'ORDER SHEET',ordenNo:'Order No.',entregadoPor:'Delivered by (salesperson)',firmaVendedor:'Salesperson signature & name',firmaGerente:'Store manager signature & name',imprimir:'🖨️ Print / Save PDF',cerrar:'Close',subtotal:'Subtotal',gracias:'Thank you for your order!'}
+es:{appTitulo:'Pedidos y Rutas',salir:'Salir',modoNube:'☁️ Nube',modoLocal:'Modo local',nav_panel:'Panel',nav_tiendas:'Tiendas',nav_despachos:'Despachos',nav_productos:'Productos',fab_tienda:'+ Tienda',fab_producto:'+ Producto',fab_despacho:'+ Despacho',login_titulo:'Entrar a la app',correo:'Correo',clave:'Contraseña',entrar:'Entrar',loginError:'No se pudo entrar: ',ventasMes:'Ventas del mes',despachosEsteMes:'despachos este mes',tiendasActivas:'Tiendas activas',visitasHoyLbl:'Visitas hoy',visitasDeHoy:'📍 Visitas de hoy · ',sinVisitas:'Sin visitas programadas para hoy.',despachar:'Despachar',porVencer:'⏰ Productos por vencer (30 días)',vencido:'VENCIDO',dias:'días',enLbl:'En: ',caducaLbl:'caduca ',uds:'uds',nadaPorVencer:'Nada por vencer en los próximos 30 días. 🎉',rutaSemana:'🗓️ Ruta de la semana',sinTiendas:'Todavía no hay tiendas.<br>Toca <b>+ Tienda</b> para registrar la primera.',mapa:'Mapa',sinDia:'Sin día',btnDespacho:'+ Despacho',editar:'Editar',borrar:'Borrar',confirmBorrarTienda:'¿Borrar esta tienda?',nuevaTienda:'Nueva tienda',editarTienda:'Editar tienda',fNombreTienda:'Nombre de la tienda *',fContacto:'Persona de contacto',fTelefono:'Teléfono',fDireccion:'Dirección',fCiudad:'Ciudad',fRuta:'Ruta / zona',fRutaEj:'Ej. Ruta Princeton',fDiaVisita:'Día de visita',fHoraVisita:'Hora de visita',fNotas:'Notas',guardarTienda:'Guardar tienda',cancelar:'Cancelar',alertNombreTienda:'El nombre de la tienda es obligatorio.',sinProductos:'Sin productos todavía.',selRapida:'🧮 Selección rápida',selRapidaDesc:'Toca + en cada presentación y la cantidad se va sumando aquí. Sirve para contar un despacho antes de registrarlo.',unidades:'unidades',limpiar:'Limpiar',editarMin:'editar',sinFotoTitulo:'Foto de la bolsa pendiente',sinFotoSub:'(sin foto asignada)',editarProducto:'Editar producto',nuevoProducto:'Nuevo producto',fNombreProd:'Nombre (sabor y presentación)',fNombreProdEj:'Ej. Piña 40 g',guardar:'Guardar',confirmBorrarProd:'¿Borrar este producto?',alertNombreProd:'Escribe el nombre del producto.',sinDespachos:'Todavía no hay despachos registrados.<br>Toca <b>+ Despacho</b> para crear el primero.',caducaLinea:' · caduca ',cU:' c/u',totalLbl:'Total: ',tiendaBorrada:'Tienda borrada',nuevoDespacho:'Nuevo despacho',editarDespacho:'Editar despacho',fTienda:'Tienda *',primeroTienda:'Primero registra una tienda en la pestaña Tiendas.',fFecha:'Fecha',fHora:'Hora',fRepartidor:'Repartidor / empleado',fEstado:'Estado',fProdsDesp:'Productos despachados',agregarProducto:'+ Agregar producto',totalDespachoLbl:'Total del despacho',guardarDespacho:'Guardar despacho',alertPrimeroTienda:'Registra primero una tienda.',confirmBorrarDesp:'¿Borrar este despacho?',fProducto:'Producto',fCantidad:'Cantidad',fPrecio:'Precio c/u ($)',fCaducidad:'Fecha de caducidad',quitarProducto:'Quitar producto',est_Pendiente:'Pendiente',est_Entregado:'Entregado',est_Cancelado:'Cancelado','dia_Domingo':'Domingo','dia_Lunes':'Lunes','dia_Martes':'Martes','dia_Miércoles':'Miércoles','dia_Jueves':'Jueves','dia_Viernes':'Viernes','dia_Sábado':'Sábado',enviarPedido:'📧 Enviar pedido',enviar:'📧 Enviar',pedirTiendaPrompt:'¿Para qué tienda es el pedido? (puedes dejarlo vacío)',asuntoPedido:'Pedido Drypical',asuntoDespacho:'Despacho Drypical',lblTienda:'Tienda',lblFecha:'Fecha',lblEstado:'Estado',lblNotas:'Notas',generadoApp:'Generado desde la app Drypical — Pedidos y Rutas.',errGuardar:'Error al guardar en la nube: ',errBorrar:'Error al borrar: ',bolsaAlt:'Bolsa Drypical ',hojaBtn:'🧾 Hoja de pedido',hojaTitulo:'HOJA DE PEDIDO',ordenNo:'N.º de orden',entregadoPor:'Entregado por (vendedor)',firmaVendedor:'Firma y nombre del vendedor',firmaGerente:'Firma y nombre del gerente de tienda',imprimir:'🖨️ Imprimir / Guardar PDF',cerrar:'Cerrar',subtotal:'Subtotal',gracias:'¡Gracias por su compra!',nav_facturas:'Facturas',fab_factura:'+ Factura',porCobrar:'Por cobrar',facturasSinPagar:'facturas sin pagar',sinFacturas:'Todavía no hay facturas.<br>Crea la primera desde un despacho (botón Facturar) o con <b>+ Factura</b>.',nuevaFactura:'Nueva factura',editarFactura:'Editar factura',facturaTitulo:'FACTURA',facturaNo:'N.º de factura',fEmision:'Fecha de emisión',fVencimiento:'Fecha de vencimiento',fImpuesto:'Impuesto / tax (%)',impuestoLbl:'Impuesto',fEstadoPago:'Estado de pago',fMontoPagado:'Monto pagado ($)',fMetodoPago:'Método de pago',saldoLbl:'Saldo por pagar',pagadoLbl:'Pagado',guardarFactura:'Guardar factura',est_Pagada:'Pagada',est_Parcial:'Parcial',est_Cancelada:'Cancelada',vencida:'VENCIDA',btnFactura:'🧾 Facturar',btnVerFactura:'🧾 Factura',marcarPagada:'✔ Marcar pagada',enviarWA:'💬 WhatsApp',confirmBorrarFactura:'¿Borrar esta factura?',facturarA:'Facturar a',pagoANombre:'Cheques a nombre de: Drypical LLC',desdeDespacho:'Despacho '},
+en:{appTitulo:'Orders & Routes',salir:'Log out',modoNube:'☁️ Cloud',modoLocal:'Local mode',nav_panel:'Dashboard',nav_tiendas:'Stores',nav_despachos:'Dispatches',nav_productos:'Products',fab_tienda:'+ Store',fab_producto:'+ Product',fab_despacho:'+ Dispatch',login_titulo:'Sign in to the app',correo:'Email',clave:'Password',entrar:'Sign in',loginError:'Could not sign in: ',ventasMes:'Sales this month',despachosEsteMes:'dispatches this month',tiendasActivas:'Active stores',visitasHoyLbl:'Visits today',visitasDeHoy:"📍 Today's visits · ",sinVisitas:'No visits scheduled for today.',despachar:'Dispatch',porVencer:'⏰ Expiring soon (30 days)',vencido:'EXPIRED',dias:'days',enLbl:'At: ',caducaLbl:'expires ',uds:'units',nadaPorVencer:'Nothing expiring in the next 30 days. 🎉',rutaSemana:"🗓️ This week's route",sinTiendas:'No stores yet.<br>Tap <b>+ Store</b> to register the first one.',mapa:'Map',sinDia:'No day set',btnDespacho:'+ Dispatch',editar:'Edit',borrar:'Delete',confirmBorrarTienda:'Delete this store?',nuevaTienda:'New store',editarTienda:'Edit store',fNombreTienda:'Store name *',fContacto:'Contact person',fTelefono:'Phone',fDireccion:'Address',fCiudad:'City',fRuta:'Route / area',fRutaEj:'E.g. Princeton Route',fDiaVisita:'Visit day',fHoraVisita:'Visit time',fNotas:'Notes',guardarTienda:'Save store',cancelar:'Cancel',alertNombreTienda:'The store name is required.',sinProductos:'No products yet.',selRapida:'🧮 Quick selection',selRapidaDesc:'Tap + on each size and the count adds up here. Use it to count a dispatch before registering it.',unidades:'units',limpiar:'Clear',editarMin:'edit',sinFotoTitulo:'Pouch photo pending',sinFotoSub:'(no photo assigned)',editarProducto:'Edit product',nuevoProducto:'New product',fNombreProd:'Name (flavor & size)',fNombreProdEj:'E.g. Pineapple 40 g',guardar:'Save',confirmBorrarProd:'Delete this product?',alertNombreProd:'Enter the product name.',sinDespachos:'No dispatches recorded yet.<br>Tap <b>+ Dispatch</b> to create the first one.',caducaLinea:' · expires ',cU:' each',totalLbl:'Total: ',tiendaBorrada:'Deleted store',nuevoDespacho:'New dispatch',editarDespacho:'Edit dispatch',fTienda:'Store *',primeroTienda:'First register a store in the Stores tab.',fFecha:'Date',fHora:'Time',fRepartidor:'Driver / employee',fEstado:'Status',fProdsDesp:'Dispatched products',agregarProducto:'+ Add product',totalDespachoLbl:'Dispatch total',guardarDespacho:'Save dispatch',alertPrimeroTienda:'Register a store first.',confirmBorrarDesp:'Delete this dispatch?',fProducto:'Product',fCantidad:'Quantity',fPrecio:'Price each ($)',fCaducidad:'Expiry date',quitarProducto:'Remove product',est_Pendiente:'Pending',est_Entregado:'Delivered',est_Cancelado:'Cancelled','dia_Domingo':'Sunday','dia_Lunes':'Monday','dia_Martes':'Tuesday','dia_Miércoles':'Wednesday','dia_Jueves':'Thursday','dia_Viernes':'Friday','dia_Sábado':'Saturday',enviarPedido:'📧 Email order',enviar:'📧 Email',pedirTiendaPrompt:'Which store is this order for? (you can leave it empty)',asuntoPedido:'Drypical order',asuntoDespacho:'Drypical dispatch',lblTienda:'Store',lblFecha:'Date',lblEstado:'Status',lblNotas:'Notes',generadoApp:'Generated from the Drypical app — Orders & Routes.',errGuardar:'Cloud save error: ',errBorrar:'Delete error: ',bolsaAlt:'Drypical pouch ',hojaBtn:'🧾 Order sheet',hojaTitulo:'ORDER SHEET',ordenNo:'Order No.',entregadoPor:'Delivered by (salesperson)',firmaVendedor:'Salesperson signature & name',firmaGerente:'Store manager signature & name',imprimir:'🖨️ Print / Save PDF',cerrar:'Close',subtotal:'Subtotal',gracias:'Thank you for your order!',nav_facturas:'Invoices',fab_factura:'+ Invoice',porCobrar:'Outstanding',facturasSinPagar:'unpaid invoices',sinFacturas:'No invoices yet.<br>Create the first one from a dispatch (Invoice it button) or with <b>+ Invoice</b>.',nuevaFactura:'New invoice',editarFactura:'Edit invoice',facturaTitulo:'INVOICE',facturaNo:'Invoice No.',fEmision:'Issue date',fVencimiento:'Due date',fImpuesto:'Tax (%)',impuestoLbl:'Tax',fEstadoPago:'Payment status',fMontoPagado:'Amount paid ($)',fMetodoPago:'Payment method',saldoLbl:'Balance due',pagadoLbl:'Paid',guardarFactura:'Save invoice',est_Pagada:'Paid',est_Parcial:'Partial',est_Cancelada:'Cancelled',vencida:'OVERDUE',btnFactura:'🧾 Invoice it',btnVerFactura:'🧾 Invoice',marcarPagada:'✔ Mark paid',enviarWA:'💬 WhatsApp',confirmBorrarFactura:'Delete this invoice?',facturarA:'Bill to',pagoANombre:'Make checks payable to: Drypical LLC',desdeDespacho:'Dispatch '}
 };
 let LANG = 'es';
 try { LANG = localStorage.getItem('drypical_idioma_v1') || 'es'; } catch(e){}
@@ -214,14 +216,15 @@ function enviarDespacho(id){
 /* ---------- Almacenamiento ---------- */
 function guardarLocal(){ localStorage.setItem('drypical_db_v1', JSON.stringify(DB)); }
 function cargarLocal(){
-  try { const raw = localStorage.getItem('drypical_db_v1'); if(raw){ DB = JSON.parse(raw); return; } } catch(e){}
-  DB = { tiendas: [], productos: PRODUCTOS_BASE.map(n => ({ id: uid()+n.length, nombre: n })), despachos: [] };
+  try { const raw = localStorage.getItem('drypical_db_v1'); if(raw){ DB = JSON.parse(raw); if(!DB.facturas) DB.facturas = []; return; } } catch(e){}
+  DB = { tiendas: [], productos: PRODUCTOS_BASE.map(n => ({ id: uid()+n.length, nombre: n })), despachos: [], facturas: [] };
   guardarLocal();
 }
 async function cargarNube(){
   const [t,p,d] = await Promise.all([ sb.from('tiendas').select('*'), sb.from('productos').select('*'), sb.from('despachos').select('*') ]);
   if(t.error) throw t.error; if(p.error) throw p.error; if(d.error) throw d.error;
   DB.tiendas = t.data || []; DB.productos = p.data || []; DB.despachos = d.data || [];
+  try { const f = await sb.from('facturas').select('*'); DB.facturas = f.error ? [] : (f.data || []); } catch(e){ DB.facturas = []; }
   if(!DB.productos.length){ for(const n of PRODUCTOS_BASE){ await guardar('productos', { id: uid()+Math.random().toString(36).slice(2,6), nombre: n }); } await cargarNube(); }
 }
 async function guardar(tabla, obj){
@@ -242,15 +245,17 @@ document.querySelectorAll('nav button').forEach(b => b.addEventListener('click',
 $('#fabBtn').addEventListener('click', () => {
   if(vista === 'tiendas') formTienda();
   else if(vista === 'productos') formProducto();
+  else if(vista === 'facturas') formFactura();
   else formDespacho();
 });
 function pintar(){
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('act', b.dataset.vista === vista));
-  ['panel','tiendas','despachos','productos'].forEach(v => $('#vista-'+v).classList.toggle('oculto', v !== vista));
-  $('#fabBtn').textContent = vista === 'tiendas' ? tr('fab_tienda') : vista === 'productos' ? tr('fab_producto') : tr('fab_despacho');
+  ['panel','tiendas','despachos','facturas','productos'].forEach(v => $('#vista-'+v).classList.toggle('oculto', v !== vista));
+  $('#fabBtn').textContent = vista === 'tiendas' ? tr('fab_tienda') : vista === 'productos' ? tr('fab_producto') : vista === 'facturas' ? tr('fab_factura') : tr('fab_despacho');
   if(vista === 'panel') pintarPanel();
   if(vista === 'tiendas') pintarTiendas();
   if(vista === 'despachos') pintarDespachos();
+  if(vista === 'facturas') pintarFacturas();
   if(vista === 'productos') pintarProductos();
 }
 
@@ -272,6 +277,8 @@ function pintarPanel(){
   let h = '<div class="grid2">'
     + '<div class="card"><h3>' + tr('ventasMes') + '</h3><div class="tot">' + dinero(ventasMes) + '</div><div class="muted">' + DB.despachos.filter(d => (d.fecha||'').startsWith(mes)).length + ' ' + tr('despachosEsteMes') + '</div></div>'
     + '<div class="card"><h3>' + tr('tiendasActivas') + '</h3><div class="tot">' + DB.tiendas.length + '</div><div class="muted">' + tr('visitasHoyLbl') + ' (' + diaTxt(hoyDia) + '): ' + visitasHoy.length + '</div></div></div>';
+  const facAbiertas = DB.facturas.filter(f => f.estadoPago !== 'Pagada' && f.estadoPago !== 'Cancelada');
+  if(facAbiertas.length) h += '<div class="card aviso"><h3>🧾 ' + tr('porCobrar') + '</h3><div class="tot">' + dinero(facAbiertas.reduce((s,f) => s + saldoFactura(f), 0)) + '</div><div class="muted">' + facAbiertas.length + ' ' + tr('facturasSinPagar') + '</div></div>';
   h += '<div class="card"><h3>' + tr('visitasDeHoy') + diaTxt(hoyDia) + '</h3>';
   h += visitasHoy.length ? visitasHoy.map(t => '<div class="row"><div class="sp"><b>' + esc(t.nombre) + '</b><div class="muted">' + esc(t.ruta||'') + (t.horaVisita ? ' · ' + esc(t.horaVisita) : '') + (t.direccion ? ' · ' + esc(t.direccion) : '') + '</div></div><button class="btn sec chico" onclick="formDespacho(\'' + t.id + '\')">' + tr('despachar') + '</button></div>').join('<hr style="border:none;border-top:1px solid var(--borde)">') : '<div class="vacio">' + tr('sinVisitas') + '</div>';
   h += '</div>';
@@ -379,11 +386,12 @@ function pintarDespachos(){
   el.innerHTML = [...DB.despachos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).map(d => {
     const t = tiendaPorId(d.tiendaId);
     const badge = d.estado === 'Entregado' ? 'b-verde' : d.estado === 'Cancelado' ? 'b-rojo' : 'b-amar';
+    const fac = DB.facturas.find(f => f.despachoId === d.id && f.estadoPago !== 'Cancelada');
     return '<div class="card"><div class="row"><div class="sp"><h3>' + esc(t ? t.nombre : tr('tiendaBorrada')) + '</h3><div class="muted">' + folioDe(d) + ' · ' + fmtFecha(d.fecha) + (d.hora ? ' · ' + esc(d.hora) : '') + (d.repartidor ? ' · 🚚 ' + esc(d.repartidor) : '') + '</div></div><span class="badge ' + badge + '">' + esc(estadoTxt(d.estado)) + '</span></div>'
     + '<div style="margin-top:6px">' + (d.lineas||[]).map(l => '<div class="muted">• ' + esc(nombreTxt(l.nombre)) + ' × ' + l.cantidad + (l.caducidad ? tr('caducaLinea') + fmtFecha(l.caducidad) : '') + (Number(l.precio) ? ' · ' + dinero(l.precio) + tr('cU') : '') + '</div>').join('') + '</div>'
     + (totalDespacho(d) ? '<div class="tot" style="margin-top:6px">' + tr('totalLbl') + dinero(totalDespacho(d)) + '</div>' : '')
     + (d.notas ? '<div class="muted" style="margin-top:4px">' + esc(d.notas) + '</div>' : '')
-    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="verHoja(\'' + d.id + '\')">' + tr('hojaBtn') + '</button><button class="btn chico" onclick="enviarDespacho(\'' + d.id + '\')">' + tr('enviar') + '</button><button class="btn sec chico" onclick="formDespacho(null,\'' + d.id + '\')">' + tr('editar') + '</button><button class="btn rojo chico" onclick="if(confirm(tr(\'confirmBorrarDesp\')))borrar(\'despachos\',\'' + d.id + '\')">' + tr('borrar') + '</button></div></div>';
+    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="verHoja(\'' + d.id + '\')">' + tr('hojaBtn') + '</button><button class="btn chico" onclick="enviarDespacho(\'' + d.id + '\')">' + tr('enviar') + '</button>' + (fac ? '<button class="btn sec chico" onclick="verFactura(\'' + fac.id + '\')">' + tr('btnVerFactura') + ' ' + esc(fac.numero) + '</button>' : '<button class="btn naranja chico" onclick="formFactura(null,\'' + d.id + '\')">' + tr('btnFactura') + '</button>') + '<button class="btn sec chico" onclick="formDespacho(null,\'' + d.id + '\')">' + tr('editar') + '</button><button class="btn rojo chico" onclick="if(confirm(tr(\'confirmBorrarDesp\')))borrar(\'despachos\',\'' + d.id + '\')">' + tr('borrar') + '</button></div></div>';
   }).join('');
 }
 function formDespacho(tiendaId, despachoId){
@@ -417,10 +425,152 @@ function agregarLinea(){ lineasTemp.push({ nombre: DB.productos[0] ? DB.producto
 function quitarLinea(i){ lineasTemp.splice(i,1); if(!lineasTemp.length) agregarLinea(); else pintarLineas(); }
 async function guardarDespacho(id){
   const tiendaId = $('#f-tienda').value; if(!tiendaId){ alert(tr('alertPrimeroTienda')); return; }
-  await guardar('despachos', { id: id || uid(), tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
+  const previo = id ? DB.despachos.find(x => x.id === id) : null;
+  const folio = previo ? (previo.folio || folioDe(previo)) : siguienteFolio();
+  await guardar('despachos', { id: id || uid(), folio, tiendaId, fecha: $('#f-fecha').value, hora: $('#f-hora2').value, repartidor: $('#f-repartidor').value.trim(), estado: $('#f-estado').value, lineas: lineasTemp, notas: $('#f-notas2').value.trim() });
   cerrarHoja(); vista = 'despachos'; pintar();
 }
 
+
+/* ---------- Facturas ---------- */
+const METODOS_PAGO = ['Efectivo','Tarjeta','Transferencia','Cheque','Stripe','Otro'];
+const METODO_EN = { 'Efectivo':'Cash', 'Tarjeta':'Card', 'Transferencia':'Bank transfer', 'Cheque':'Check', 'Stripe':'Stripe', 'Otro':'Other' };
+function metodoTxt(m){ return LANG === 'en' ? (METODO_EN[m] || m) : m; }
+function subtotalFactura(f){ return (f.lineas||[]).reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0); }
+function impuestoFactura(f){ return subtotalFactura(f) * (Number(f.impuestoPct)||0) / 100; }
+function totalFactura(f){ return subtotalFactura(f) + impuestoFactura(f); }
+function saldoFactura(f){ return Math.max(0, totalFactura(f) - (Number(f.montoPagado)||0)); }
+function siguienteNumeroFactura(){
+  let max = 1000 + DB.facturas.length;
+  DB.facturas.forEach(x => { const m = /^INV-(\d+)$/.exec(x.numero || ''); if(m) max = Math.max(max, Number(m[1])); });
+  return 'INV-' + (max + 1);
+}
+function sumarDias(iso, n){ const d = new Date((iso || hoyISO()) + 'T00:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function facturaVencida(f){ return f.estadoPago !== 'Pagada' && f.estadoPago !== 'Cancelada' && !!f.fechaVencimiento && diasHasta(f.fechaVencimiento) < 0; }
+function pintarFacturas(){
+  const el = $('#vista-facturas');
+  if(!DB.facturas.length){ el.innerHTML = '<div class="card vacio">' + tr('sinFacturas') + '</div>'; return; }
+  el.innerHTML = [...DB.facturas].sort((a,b) => (b.fechaEmision||'').localeCompare(a.fechaEmision||'')).map(f => {
+    const t = tiendaPorId(f.tiendaId);
+    const desp = f.despachoId ? DB.despachos.find(x => x.id === f.despachoId) : null;
+    const badge = f.estadoPago === 'Pagada' ? 'b-verde' : f.estadoPago === 'Cancelada' ? 'b-gris' : f.estadoPago === 'Parcial' ? 'b-nar' : 'b-amar';
+    const saldo = saldoFactura(f);
+    return '<div class="card' + (facturaVencida(f) ? ' alerta' : '') + '"><div class="row"><div class="sp"><h3>' + esc(f.numero) + ' · ' + esc(t ? t.nombre : tr('tiendaBorrada')) + '</h3><div class="muted">' + tr('fEmision') + ': ' + fmtFecha(f.fechaEmision) + ' · ' + tr('fVencimiento') + ': ' + fmtFecha(f.fechaVencimiento) + (desp ? ' · ' + tr('desdeDespacho') + folioDe(desp) : '') + '</div></div><span class="badge ' + badge + '">' + esc(estadoTxt(f.estadoPago)) + '</span>' + (facturaVencida(f) ? '<span class="badge b-rojo">' + tr('vencida') + '</span>' : '') + '</div>'
+    + '<div class="row" style="margin-top:6px"><span class="sp muted">' + tr('totalLbl') + '<b>' + dinero(totalFactura(f)) + '</b>' + (Number(f.montoPagado) ? ' · ' + tr('pagadoLbl') + ': ' + dinero(f.montoPagado) + (f.metodoPago ? ' (' + esc(metodoTxt(f.metodoPago)) + ')' : '') : '') + '</span>' + (saldo > 0 && f.estadoPago !== 'Cancelada' ? '<span style="font-weight:800;color:var(--rojo)">' + tr('saldoLbl') + ': ' + dinero(saldo) + '</span>' : '') + '</div>'
+    + '<div class="row" style="margin-top:10px"><button class="btn sec chico" onclick="verFactura(\'' + f.id + '\')">' + tr('btnVerFactura') + '</button><button class="btn chico" onclick="enviarFactura(\'' + f.id + '\')">' + tr('enviar') + '</button>' + (t && t.telefono ? '<button class="btn sec chico" onclick="enviarFacturaWA(\'' + f.id + '\')">' + tr('enviarWA') + '</button>' : '') + (f.estadoPago !== 'Pagada' && f.estadoPago !== 'Cancelada' ? '<button class="btn naranja chico" onclick="marcarPagada(\'' + f.id + '\')">' + tr('marcarPagada') + '</button>' : '') + '<button class="btn sec chico" onclick="formFactura(\'' + f.id + '\')">' + tr('editar') + '</button><button class="btn rojo chico" onclick="if(confirm(tr(\'confirmBorrarFactura\')))borrar(\'facturas\',\'' + f.id + '\')">' + tr('borrar') + '</button></div></div>';
+  }).join('');
+}
+let lineasFac = [];
+function formFactura(id, despachoId){
+  const f = id ? DB.facturas.find(x => x.id === id) : null;
+  const desp = despachoId ? DB.despachos.find(x => x.id === despachoId) : null;
+  lineasFac = f ? JSON.parse(JSON.stringify(f.lineas || [])) : desp ? JSON.parse(JSON.stringify(desp.lineas || [])) : [];
+  if(!lineasFac.length) lineasFac = [ { nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0 } ];
+  const emision = f ? f.fechaEmision : hoyISO();
+  abrirHoja('<h2>' + (f ? tr('editarFactura') : tr('nuevaFactura')) + (f ? ' · ' + esc(f.numero) : '') + '</h2>'
+  + '<label>' + tr('fTienda') + '</label><select id="ff-tienda">' + DB.tiendas.map(t => '<option value="' + t.id + '" ' + ((f ? f.tiendaId : desp ? desp.tiendaId : '') === t.id ? 'selected' : '') + '>' + esc(t.nombre) + '</option>').join('') + '</select>'
+  + (DB.tiendas.length ? '' : '<p class="muted" style="color:var(--rojo)">' + tr('primeroTienda') + '</p>')
+  + '<div class="grid2"><div><label>' + tr('fEmision') + '</label><input id="ff-emision" type="date" value="' + emision + '"></div><div><label>' + tr('fVencimiento') + '</label><input id="ff-vencimiento" type="date" value="' + (f ? f.fechaVencimiento : sumarDias(emision, 30)) + '"></div></div>'
+  + '<label>' + tr('fProdsDesp') + '</label><div id="ff-lineas"></div>'
+  + '<button class="btn sec chico" style="margin-top:10px" onclick="agregarLineaFac()">' + tr('agregarProducto') + '</button>'
+  + '<div class="grid2"><div><label>' + tr('fImpuesto') + '</label><input id="ff-impuesto" type="number" min="0" step="0.01" value="' + (f ? f.impuestoPct : 0) + '" oninput="pintarTotalesFac()"></div><div><label>' + tr('fEstadoPago') + '</label><select id="ff-estado">' + ['Pendiente','Parcial','Pagada','Cancelada'].map(e => '<option value="' + e + '" ' + ((f ? f.estadoPago : 'Pendiente') === e ? 'selected' : '') + '>' + estadoTxt(e) + '</option>').join('') + '</select></div></div>'
+  + '<div class="grid2"><div><label>' + tr('fMontoPagado') + '</label><input id="ff-pagado" type="number" min="0" step="0.01" value="' + (f ? f.montoPagado : 0) + '" oninput="pintarTotalesFac()"></div><div><label>' + tr('fMetodoPago') + '</label><select id="ff-metodo">' + METODOS_PAGO.map(m => '<option value="' + m + '" ' + ((f ? f.metodoPago : '') === m ? 'selected' : '') + '>' + metodoTxt(m) + '</option>').join('') + '</select></div></div>'
+  + '<div class="row" style="margin-top:12px"><span class="sp muted">' + tr('subtotal') + '</span><span id="ff-subtotal">$0.00</span></div>'
+  + '<div class="row"><span class="sp muted">' + tr('impuestoLbl') + '</span><span id="ff-imp">$0.00</span></div>'
+  + '<div class="row"><span class="sp"><b>Total</b></span><span class="tot" id="ff-total">$0.00</span></div>'
+  + '<div class="row"><span class="sp muted">' + tr('saldoLbl') + '</span><span id="ff-saldo" style="font-weight:700">$0.00</span></div>'
+  + '<label>' + tr('fNotas') + '</label><textarea id="ff-notas">' + esc(f ? f.notas : '') + '</textarea>'
+  + '<div class="row" style="margin-top:14px"><button class="btn sp" onclick="guardarFactura(\'' + (id||'') + '\',\'' + (despachoId||'') + '\')">' + tr('guardarFactura') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cancelar') + '</button></div>');
+  pintarLineasFac();
+}
+function pintarLineasFac(){
+  const cont = $('#ff-lineas'); if(!cont) return;
+  cont.innerHTML = lineasFac.map((l,i) => '<div class="linea"><label>' + tr('fProducto') + '</label><select onchange="lineaFacCambio(' + i + ',\'nombre\',this.value)">' + DB.productos.map(p => '<option value="' + escA(p.nombre) + '" ' + (l.nombre === p.nombre ? 'selected' : '') + '>' + esc(nombreTxt(p.nombre)) + '</option>').join('') + '</select>'
+  + '<div class="grid2"><div><label>' + tr('fCantidad') + '</label><input type="number" min="0" value="' + l.cantidad + '" oninput="lineaFacCambio(' + i + ',\'cantidad\',this.value)"></div><div><label>' + tr('fPrecio') + '</label><input type="number" min="0" step="0.01" value="' + l.precio + '" oninput="lineaFacCambio(' + i + ',\'precio\',this.value)"></div></div>'
+  + '<button class="btn rojo chico" style="margin-top:8px" onclick="quitarLineaFac(' + i + ')">' + tr('quitarProducto') + '</button></div>').join('');
+  pintarTotalesFac();
+}
+function lineaFacCambio(i, campo, valor){ lineasFac[i][campo] = (campo === 'cantidad' || campo === 'precio') ? Number(valor) : valor; pintarTotalesFac(); }
+function agregarLineaFac(){ lineasFac.push({ nombre: DB.productos[0] ? DB.productos[0].nombre : '', cantidad: 1, precio: 0 }); pintarLineasFac(); }
+function quitarLineaFac(i){ lineasFac.splice(i,1); if(!lineasFac.length) agregarLineaFac(); else pintarLineasFac(); }
+function pintarTotalesFac(){
+  const sub = lineasFac.reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
+  const pct = Number(($('#ff-impuesto')||{}).value) || 0;
+  const imp = sub * pct / 100, tot = sub + imp;
+  const pag = Number(($('#ff-pagado')||{}).value) || 0;
+  const poner = (sel,v) => { const e = $(sel); if(e) e.textContent = dinero(v); };
+  poner('#ff-subtotal', sub); poner('#ff-imp', imp); poner('#ff-total', tot); poner('#ff-saldo', Math.max(0, tot - pag));
+}
+async function guardarFactura(id, despachoId){
+  const tiendaId = $('#ff-tienda').value; if(!tiendaId){ alert(tr('alertPrimeroTienda')); return; }
+  const previo = id ? DB.facturas.find(x => x.id === id) : null;
+  const sub = lineasFac.reduce((s,l) => s + (Number(l.cantidad)||0) * (Number(l.precio)||0), 0);
+  const pct = Number($('#ff-impuesto').value) || 0;
+  const tot = sub + sub * pct / 100;
+  const pagado = Number($('#ff-pagado').value) || 0;
+  let estado = $('#ff-estado').value;
+  if(estado !== 'Cancelada'){ estado = (pagado >= tot && tot > 0) ? 'Pagada' : (pagado > 0 ? 'Parcial' : 'Pendiente'); }
+  await guardar('facturas', { id: id || uid(), numero: previo ? previo.numero : siguienteNumeroFactura(), despachoId: previo ? (previo.despachoId || '') : (despachoId || ''), tiendaId, fechaEmision: $('#ff-emision').value, fechaVencimiento: $('#ff-vencimiento').value, lineas: lineasFac.map(l => ({ nombre: l.nombre, cantidad: Number(l.cantidad)||0, precio: Number(l.precio)||0 })), impuestoPct: pct, estadoPago: estado, montoPagado: pagado, metodoPago: $('#ff-metodo').value, notas: $('#ff-notas').value.trim() });
+  cerrarHoja(); vista = 'facturas'; pintar();
+}
+async function marcarPagada(id){
+  const f = DB.facturas.find(x => x.id === id); if(!f) return;
+  await guardar('facturas', { ...f, estadoPago: 'Pagada', montoPagado: totalFactura(f) });
+  pintar();
+}
+function verFactura(id){
+  const f = DB.facturas.find(x => x.id === id); if(!f) return;
+  const tnd = tiendaPorId(f.tiendaId) || {};
+  const filas = (f.lineas || []).map(l => '<tr><td>' + esc(nombreTxt(l.nombre)) + '</td><td style="text-align:center">' + (Number(l.cantidad) || 0) + '</td><td style="text-align:right">' + dinero(l.precio || 0) + '</td><td style="text-align:right">' + dinero((Number(l.cantidad) || 0) * (Number(l.precio) || 0)) + '</td></tr>').join('');
+  const saldo = saldoFactura(f);
+  const sheet = '<div class="hoja-pedido">'
+    + '<div style="display:flex;gap:12px;align-items:center;border-bottom:3px solid var(--verde);padding-bottom:10px"><img src="logo.png" alt="Drypical" style="height:56px;width:auto;background:#fff;border-radius:8px"><div><div style="font-weight:800;font-size:17px;color:var(--verde)">DRYPICAL LLC</div><div style="font-size:12px;color:#5f6368">Real Fruit • Real Flavor<br>909 Mountain Laurel Rd, Princeton, TX 75407-5459<br>Tel. 469-515-2216 · Info@Drypical.com</div></div></div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:14px"><h2 style="margin:0;color:var(--verde)">' + tr('facturaTitulo') + '</h2><div style="text-align:right;font-size:13px"><div><b>' + tr('facturaNo') + ':</b> ' + esc(f.numero) + '</div><div><b>' + tr('fEmision') + ':</b> ' + fmtFecha(f.fechaEmision) + '</div><div><b>' + tr('fVencimiento') + ':</b> ' + fmtFecha(f.fechaVencimiento) + '</div><div><b>' + tr('fEstadoPago') + ':</b> ' + estadoTxt(f.estadoPago) + '</div></div></div>'
+    + '<div style="margin-top:12px;font-size:14px;line-height:1.55"><div><b>' + tr('facturarA') + ':</b> ' + esc(tnd.nombre || tr('tiendaBorrada')) + '</div>'
+    + (tnd.direccion ? '<div><b>' + tr('fDireccion') + ':</b> ' + esc(tnd.direccion) + (tnd.ciudad ? ', ' + esc(tnd.ciudad) : '') + '</div>' : '')
+    + (tnd.telefono ? '<div><b>' + tr('fTelefono') + ':</b> ' + esc(tnd.telefono) + '</div>' : '')
+    + (tnd.contacto ? '<div><b>' + tr('fContacto') + ':</b> ' + esc(tnd.contacto) + '</div>' : '')
+    + '</div>'
+    + '<table><thead><tr><th>' + tr('fProducto') + '</th><th style="text-align:center;width:60px">' + tr('fCantidad') + '</th><th style="text-align:right;width:90px">' + tr('fPrecio') + '</th><th style="text-align:right;width:100px">' + tr('subtotal') + '</th></tr></thead><tbody>' + filas + '</tbody></table>'
+    + '<div style="text-align:right;margin-top:10px;font-size:14px;line-height:1.7"><div>' + tr('subtotal') + ': ' + dinero(subtotalFactura(f)) + '</div>'
+    + '<div>' + tr('impuestoLbl') + (Number(f.impuestoPct) ? ' (' + f.impuestoPct + '%)' : '') + ': ' + dinero(impuestoFactura(f)) + '</div>'
+    + '<div class="tot">Total: ' + dinero(totalFactura(f)) + '</div>'
+    + (Number(f.montoPagado) ? '<div>' + tr('pagadoLbl') + ': ' + dinero(f.montoPagado) + (f.metodoPago ? ' · ' + esc(metodoTxt(f.metodoPago)) : '') + '</div>' : '')
+    + (saldo > 0 ? '<div style="font-weight:800;color:var(--rojo)">' + tr('saldoLbl') + ': ' + dinero(saldo) + '</div>' : '')
+    + '</div>'
+    + (f.notas ? '<div style="margin-top:10px;font-size:13px"><b>' + tr('lblNotas') + ':</b> ' + esc(f.notas) + '</div>' : '')
+    + '<div style="margin-top:16px;font-size:13px;color:#37474a">' + tr('pagoANombre') + ' · Tel. 469-515-2216</div>'
+    + '<div style="text-align:center;margin-top:22px;font-size:12px;color:#5f6368">' + tr('gracias') + ' · Real Fruit • Real Flavor</div>'
+    + '</div>';
+  abrirHoja(sheet + '<div class="row" style="margin-top:18px"><button class="btn sp" onclick="imprimirHoja()">' + tr('imprimir') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cerrar') + '</button></div>');
+  $('#imprimible').innerHTML = sheet;
+}
+function cuerpoFacturaTxt(f){
+  const tnd = tiendaPorId(f.tiendaId);
+  return tr('facturaTitulo') + ' ' + f.numero + ' — Drypical LLC\n'
+    + tr('lblTienda') + ': ' + (tnd ? tnd.nombre : tr('tiendaBorrada')) + '\n'
+    + tr('fEmision') + ': ' + fmtFecha(f.fechaEmision) + ' · ' + tr('fVencimiento') + ': ' + fmtFecha(f.fechaVencimiento) + '\n\n'
+    + (f.lineas || []).map(l => '• ' + l.nombre + ' × ' + l.cantidad + ' · ' + dinero(l.precio) + tr('cU')).join('\n')
+    + '\n\n' + tr('subtotal') + ': ' + dinero(subtotalFactura(f))
+    + '\n' + tr('impuestoLbl') + ': ' + dinero(impuestoFactura(f))
+    + '\nTotal: ' + dinero(totalFactura(f))
+    + (Number(f.montoPagado) ? '\n' + tr('pagadoLbl') + ': ' + dinero(f.montoPagado) : '')
+    + (saldoFactura(f) > 0 ? '\n' + tr('saldoLbl') + ': ' + dinero(saldoFactura(f)) : '')
+    + '\n\n' + tr('pagoANombre') + ' · Info@Drypical.com · Tel. 469-515-2216'
+    + '\n\n' + tr('generadoApp');
+}
+function enviarFactura(id){
+  const f = DB.facturas.find(x => x.id === id); if(!f) return;
+  const asunto = tr('facturaTitulo') + ' ' + f.numero + ' — Drypical LLC';
+  location.href = 'mailto:' + CORREO_PEDIDOS + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(cuerpoFacturaTxt(f));
+}
+function enviarFacturaWA(id){
+  const f = DB.facturas.find(x => x.id === id); if(!f) return;
+  const tnd = tiendaPorId(f.tiendaId); if(!tnd || !tnd.telefono) return;
+  let tel = String(tnd.telefono).replace(/\D/g, '');
+  if(tel.length === 10) tel = '1' + tel;
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(cuerpoFacturaTxt(f)), '_blank');
+}
 
 /* ---------- Hoja de pedido ---------- */
 function folioDe(d){
@@ -430,7 +580,7 @@ function folioDe(d){
   return 'DRY-' + (1001 + (i < 0 ? 0 : i));
 }
 function siguienteFolio(){
-  let max = 1000;
+  let max = 1000 + DB.despachos.length;
   DB.despachos.forEach(x => { const m = /^DRY-(\d+)$/.exec(x.folio || ''); if(m) max = Math.max(max, Number(m[1])); });
   return 'DRY-' + (max + 1);
 }
