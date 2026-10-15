@@ -491,6 +491,23 @@ function tratamientoDe(f){
   return tratamientoDefaultTienda(f.tiendaId);
 }
 function motivoCancelDe(f){ return f ? (extraFactura(f.id).motivoCancelacion || '') : ''; }
+/* --- Copia del cliente dentro de la factura (seguro anti-borrado) ---
+   Al emitir, se guarda una copia de los datos de la tienda en el mapa
+   lateral de la factura (mismo mecanismo que tratamiento y motivo).
+   Así, si la tienda se borra o se edita después, la factura vieja se
+   reimprime, se manda por correo/WhatsApp y sale en el reporte con los
+   datos del cliente TAL como estaban al emitirse. Las facturas emitidas
+   antes de este arreglo no tienen copia y siguen usando la tienda viva. */
+function snapshotClienteDe(tiendaId){
+  const t = tiendaPorId(tiendaId); if(!t) return null;
+  return { nombre: t.nombre || '', contacto: t.contacto || '', telefono: t.telefono || '', direccion: t.direccion || '', ciudad: t.ciudad || '' };
+}
+function clienteDeFactura(f){
+  if(!f) return null;
+  const snap = extraFactura(f.id).cliente;
+  if(snap && snap.nombre) return snap;
+  return tiendaPorId(f.tiendaId) || null;
+}
 function tratTxt(t){ return tr('trat_' + t); }
 function leyendaTratamiento(f){
   const t = tratamientoDe(f);
@@ -536,7 +553,7 @@ function verReporteFiscal(){
     + '<table><thead><tr><th>' + tr('repTratamiento') + '</th><th style="text-align:center;width:80px">' + tr('repFacturasN') + '</th><th style="text-align:right;width:120px">Total</th></tr></thead><tbody>' + filasG + '</tbody></table>'
     + '<div style="text-align:right;margin-top:10px;font-size:14px;line-height:1.7"><div>' + tr('repImpuestoCobrado') + ': ' + dinero(impTotal) + '</div><div>' + tr('repTotalFacturado') + ': ' + dinero(totFac) + '</div><div>' + tr('repTotalPagado') + ': ' + dinero(totPag) + '</div><div class="tot">' + tr('repSaldoPend') + ': ' + dinero(totFac - totPag) + '</div></div>'
     + '<h3 style="margin:16px 0 4px">' + tr('repCanceladas') + ' (' + canceladas.length + ')</h3>'
-    + (canceladas.length ? canceladas.map(f => '<div class="muted">• ' + esc(f.numero) + ' · ' + esc((tiendaPorId(f.tiendaId)||{}).nombre || tr('tiendaBorrada')) + ' · ' + dinero(totalFactura(f)) + (motivoCancelDe(f) ? ' · ' + esc(motivoCancelDe(f)) : '') + '</div>').join('') : '<div class="muted">' + tr('repSinDatos') + '</div>')
+    + (canceladas.length ? canceladas.map(f => '<div class="muted">• ' + esc(f.numero) + ' · ' + esc((clienteDeFactura(f)||{}).nombre || tr('tiendaBorrada')) + ' · ' + dinero(totalFactura(f)) + (motivoCancelDe(f) ? ' · ' + esc(motivoCancelDe(f)) : '') + '</div>').join('') : '<div class="muted">' + tr('repSinDatos') + '</div>')
     + '</div>';
   reporteSheetHTML = sheet;
   abrirHoja(sheet + '<div class="row" style="margin-top:18px"><button class="btn sp" onclick="exportarReporteCSV()">' + tr('exportarCSV') + '</button><button class="btn sec" onclick="imprimirReporte()">' + tr('imprimir') + '</button><button class="btn sec" onclick="cerrarHoja()">' + tr('cerrar') + '</button></div>');
@@ -545,7 +562,7 @@ function imprimirReporte(){ if(!reporteSheetHTML) return; $('#imprimible').inner
 function exportarReporteCSV(){
   if(!datosReporte) return;
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const filas = [...datosReporte.filas].sort((a,b) => (a.fechaEmision||'').localeCompare(b.fechaEmision||'')).map(f => { const t = tiendaPorId(f.tiendaId); return [f.numero, f.fechaEmision || '', t ? t.nombre : '', tratamientoDe(f), f.estadoPago, subtotalFactura(f).toFixed(2), impuestoFactura(f).toFixed(2), totalFactura(f).toFixed(2), (Number(f.montoPagado)||0).toFixed(2), saldoFactura(f).toFixed(2), motivoCancelDe(f)].map(q).join(','); });
+  const filas = [...datosReporte.filas].sort((a,b) => (a.fechaEmision||'').localeCompare(b.fechaEmision||'')).map(f => { const t = clienteDeFactura(f); return [f.numero, f.fechaEmision || '', t ? t.nombre : '', tratamientoDe(f), f.estadoPago, subtotalFactura(f).toFixed(2), impuestoFactura(f).toFixed(2), totalFactura(f).toFixed(2), (Number(f.montoPagado)||0).toFixed(2), saldoFactura(f).toFixed(2), motivoCancelDe(f)].map(q).join(','); });
   const csv = 'Numero,Fecha,Tienda,Tratamiento,Estado,Subtotal,Impuesto,Total,Pagado,Saldo,MotivoCancelacion\n' + filas.join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
@@ -583,7 +600,7 @@ function pintarFacturas(){
     + '<button class="btn chico" onclick="verReporteFiscal()">' + tr('reporteBtn') + '</button><button class="btn sec chico" onclick="formEmisor()">' + tr('emisorBtn') + '</button></div></div>';
   if(!DB.facturas.length){ el.innerHTML = h + '<div class="card vacio">' + tr('sinFacturas') + '</div>'; return; }
   h += [...DB.facturas].sort((a,b) => (b.fechaEmision||'').localeCompare(a.fechaEmision||'')).map(f => {
-    const t = tiendaPorId(f.tiendaId);
+    const t = clienteDeFactura(f);
     const desp = f.despachoId ? DB.despachos.find(x => x.id === f.despachoId) : null;
     const badge = f.estadoPago === 'Pagada' ? 'b-verde' : f.estadoPago === 'Cancelada' ? 'b-gris' : f.estadoPago === 'Parcial' ? 'b-nar' : 'b-amar';
     const saldo = saldoFactura(f);
@@ -643,7 +660,7 @@ function formPagoFactura(f){
   /* Factura EMITIDA: líneas, fechas, tienda y tratamiento quedan bloqueados.
      Solo se registran pagos (monto y método); el estado se deriva del pago. */
   totalPagoActual = totalFactura(f);
-  const t = tiendaPorId(f.tiendaId);
+  const t = clienteDeFactura(f);
   const lineasHTML = (f.lineas || []).map(l => '<div class="muted">• ' + esc(nombreTxt(l.nombre)) + ' × ' + (Number(l.cantidad)||0) + ' · ' + dinero((Number(l.cantidad)||0) * (Number(l.precio)||0)) + '</div>').join('');
   abrirHoja('<h2>' + tr('editarPago') + ' · ' + esc(f.numero) + '</h2>'
   + '<p class="muted">' + tr('facturaBloqueada') + '</p>'
@@ -690,7 +707,7 @@ async function guardarFacturaNueva(despachoId){
   const nid = uid();
   await guardar('facturas', { id: nid, numero, despachoId: despachoId || '', tiendaId, fechaEmision: $('#ff-emision').value, fechaVencimiento: $('#ff-vencimiento').value, lineas: lineasFac.map(l => ({ nombre: l.nombre, cantidad: Number(l.cantidad)||0, precio: Number(l.precio)||0 })), impuestoPct: 0, estadoPago: estado, montoPagado: pagado, metodoPago: $('#ff-metodo').value, notas: $('#ff-notas').value.trim() });
   marcarNumeroUsado(numero);
-  ponerEnMapaLS('drypical_facturas_extra_v1', nid, { tratamiento: trat });
+  ponerEnMapaLS('drypical_facturas_extra_v1', nid, { tratamiento: trat, cliente: snapshotClienteDe(tiendaId) });
   cerrarHoja(); vista = 'facturas'; pintar();
 }
 async function guardarPagoFactura(id){
@@ -721,7 +738,7 @@ async function marcarPagada(id){
 }
 function verFactura(id){
   const f = DB.facturas.find(x => x.id === id); if(!f) return;
-  const tnd = tiendaPorId(f.tiendaId) || {};
+  const tnd = clienteDeFactura(f) || {};
   const desp = f.despachoId ? DB.despachos.find(x => x.id === f.despachoId) : null;
   const filas = (f.lineas || []).map(l => '<tr><td>' + esc(nombreTxt(l.nombre)) + '</td><td style="text-align:center">' + (Number(l.cantidad) || 0) + '</td><td style="text-align:right">' + dinero(l.precio || 0) + '</td><td style="text-align:right">' + dinero((Number(l.cantidad) || 0) * (Number(l.precio) || 0)) + '</td></tr>').join('');
   const saldo = saldoFactura(f);
@@ -750,7 +767,7 @@ function verFactura(id){
   $('#imprimible').innerHTML = sheet;
 }
 function cuerpoFacturaTxt(f){
-  const tnd = tiendaPorId(f.tiendaId);
+  const tnd = clienteDeFactura(f);
   const desp = f.despachoId ? DB.despachos.find(x => x.id === f.despachoId) : null;
   return tr('facturaTitulo') + ' ' + f.numero + ' — ' + emisor().razonSocial + '\n'
     + tr('lblTienda') + ': ' + (tnd ? tnd.nombre : tr('tiendaBorrada')) + '\n'
@@ -775,7 +792,7 @@ function enviarFactura(id){
 }
 function enviarFacturaWA(id){
   const f = DB.facturas.find(x => x.id === id); if(!f) return;
-  const tnd = tiendaPorId(f.tiendaId); if(!tnd || !tnd.telefono) return;
+  const tnd = clienteDeFactura(f); if(!tnd || !tnd.telefono) return;
   let tel = String(tnd.telefono).replace(/\D/g, '');
   if(tel.length === 10) tel = '1' + tel;
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(cuerpoFacturaTxt(f)), '_blank');
