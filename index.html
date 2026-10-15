@@ -596,8 +596,8 @@ function facturaVencida(f){ return f.estadoPago !== 'Pagada' && f.estadoPago !==
 function pintarFacturas(){
   const el = $('#vista-facturas');
   let h = '<div class="card"><div class="row"><div class="sp"><h3>🧾 ' + tr('nav_facturas') + '</h3><div class="muted">' + tr('reporteDesc') + '</div></div></div>'
-    + '<div class="row" style="margin-top:10px"><div style="flex:1;min-width:150px"><label style="margin-top:0">' + tr('fMes') + '</label><input type="month" id="fr-mes" value="' + mesReporte + '" onchange="mesReporte=this.value"></div>'
-    + '<button class="btn chico" onclick="verReporteFiscal()">' + tr('reporteBtn') + '</button><button class="btn sec chico" onclick="formEmisor()">' + tr('emisorBtn') + '</button></div></div>';
+    + '<div style="margin-top:10px"><label style="margin-top:0">' + tr('fMes') + '</label><input type="month" id="fr-mes" value="' + mesReporte + '" onchange="mesReporte=this.value"></div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px"><button class="btn" style="width:100%" onclick="verReporteFiscal()">' + tr('reporteBtn') + '</button><button class="btn sec" style="width:100%" onclick="formEmisor()">' + tr('emisorBtn') + '</button></div></div>';
   if(!DB.facturas.length){ el.innerHTML = h + '<div class="card vacio">' + tr('sinFacturas') + '</div>'; return; }
   h += [...DB.facturas].sort((a,b) => (b.fechaEmision||'').localeCompare(a.fechaEmision||'')).map(f => {
     const t = clienteDeFactura(f);
