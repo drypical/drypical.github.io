@@ -366,7 +366,10 @@ function pintarListaSuscriptores(){
   cont.innerHTML = lista.map(s => '<div class="card"><div class="row"><div class="sp"><h3>' + esc(s.nombre) + '</h3>'
     + '<div class="muted">' + esc(s.correo) + (s.telefono ? ' · <a class="tel" href="tel:' + esc(s.telefono) + '">' + esc(s.telefono) + '</a>' : '') + '</div>'
     + '<div style="margin-top:6px"><span class="badge b-verde">' + (s.fuente === 'app' ? '📱 App' : '🌐 Web') + '</span> <span class="muted">' + tr('registradoEl') + fmtFecha((s.creado_en || '').slice(0, 10)) + '</span></div>'
-    + '</div></div><div class="row" style="margin-top:10px"><button class="btn rojo chico" onclick="borrarSuscriptor(\'' + s.id + '\')">' + tr('borrar') + '</button></div></div>').join('');
+    + '</div></div><div class="row" style="margin-top:10px">'
+    + (s.telefono ? '<button class="btn chico" style="background:#22c15e;color:#fff" onclick="waSuscriptor(\'' + s.id + '\')">' + tr('enviarWA') + '</button>' : '')
+    + '<button class="btn sec chico" onclick="correoSuscriptor(\'' + s.id + '\')">' + tr('enviar') + '</button>'
+    + '<button class="btn rojo chico" onclick="borrarSuscriptor(\'' + s.id + '\')">' + tr('borrar') + '</button></div></div>').join('');
 }
 function formSuscriptor(){
   abrirHoja('<h2>' + tr('nuevoSuscriptor') + '</h2>'
@@ -396,6 +399,11 @@ async function borrarSuscriptor(id){
   if(!NUBE) guardarLocal();
   pintar();
 }
+
+function telIntlSus(t){ const d = (t || '').replace(/\D/g, ''); if(d.length === 10) return '1' + d; return d; }
+function saludoSus(s){ const n = (s.nombre || '').trim().split(' ')[0]; return 'Hi ' + (n || 'there') + '! This is Drypical 🍍 Thanks for joining our First Season list — we will let you know the moment it opens. Real Fruit, Real Flavor!'; }
+function waSuscriptor(id){ const s = DB.suscriptores.find(x => String(x.id) === String(id)); if(!s) return; const tel = telIntlSus(s.telefono); if(!tel) return; window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(saludoSus(s)), '_blank'); }
+function correoSuscriptor(id){ const s = DB.suscriptores.find(x => String(x.id) === String(id)); if(!s || !s.correo) return; location.href = 'mailto:' + s.correo + '?subject=' + encodeURIComponent('Drypical — First Season') + '&body=' + encodeURIComponent(saludoSus(s)); }
 
 /* ---------- Productos ---------- */
 /* Fotos verificadas limpias una por una (logo completo integrado en la
