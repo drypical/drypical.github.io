@@ -931,7 +931,13 @@ async function entrar(){
   $('#salirBtn').style.display = '';
   await cargarNube(); aplicarIdioma();
 }
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
+if('serviceWorker' in navigator){
+  /* Auto-actualización: al abrir, la app busca versión nueva y, cuando el
+     service worker nuevo toma el control, recarga una sola vez para mostrarla. */
+  let recargandoSW = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if(recargandoSW) return; recargandoSW = true; location.reload(); });
+  navigator.serviceWorker.register('sw.js').then(r => { r.update().catch(() => {}); }).catch(() => {});
+}
 iniciar();
 </script>
 </body>
